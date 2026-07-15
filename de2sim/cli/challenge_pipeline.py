@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 from typing import Sequence
 
-from de2sim import __version__
+from de2sim.ingest.artifact_parser import ArtifactParsingError, parse_artifacts_from_manifest
 from de2sim.ingest.package_reader import (
     PackageValidationError,
     ingest_engineering_package,
@@ -19,6 +19,7 @@ _PHASE0_MESSAGE = (
     "DE2Sim Phase 0 scaffold is installed, but engineering-package ingestion "
     "is not implemented yet."
 )
+_CLI_VERSION = "0.1.1-phase1b"
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -42,6 +43,11 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="PATH",
         help="Output directory for Phase 1A package ingestion artifacts.",
     )
+    parser.add_argument(
+        "--parse-artifacts",
+        action="store_true",
+        help="After Phase 1A ingestion, parse supported structured artifacts and write parsed_artifacts.json.",
+    )
     return parser
 
 
@@ -51,7 +57,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     if args.version:
-        print(f"DE2Sim v{__version__}")
+        print(f"DE2Sim v{_CLI_VERSION}")
         return 0
 
     if not args.engineering_package:
@@ -86,6 +92,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 2
 
     print(manifest_path)
+    if args.parse_artifacts:
+        try:
+            parsed_path = parse_artifacts_from_manifest(manifest_path)
+        except ArtifactParsingError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 2
+        print(parsed_path)
     return 0
 
 
