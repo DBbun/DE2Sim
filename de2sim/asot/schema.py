@@ -1,0 +1,523 @@
+"""Versioned ASOT schema dataclasses for DE2Sim Phase 2A."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+import datetime as _dt
+import hashlib
+import json
+from typing import Any
+
+
+SUPPORTED_SCHEMA_VERSION = "de2sim.asot.v1"
+ENTITY_COLLECTIONS = (
+    "components",
+    "requirements",
+    "interfaces",
+    "parameters",
+    "physical_models",
+    "behaviors",
+    "geometry",
+    "provenance",
+)
+DOCUMENT_FIELDS = (
+    "schema_version",
+    "asot_id",
+    "metadata",
+    "components",
+    "requirements",
+    "interfaces",
+    "parameters",
+    "physical_models",
+    "behaviors",
+    "geometry",
+    "provenance",
+    "validation",
+)
+
+
+def _clean_text(value: Any) -> str:
+    return "" if value is None else str(value).strip()
+
+
+def _sorted_texts(values: list[str] | tuple[str, ...] | None) -> list[str]:
+    return sorted({_clean_text(value) for value in values or [] if _clean_text(value)})
+
+
+def _canonical_payload(value: Any) -> Any:
+    if isinstance(value, dict):
+        return {str(key): _canonical_payload(value[key]) for key in sorted(value)}
+    if isinstance(value, (list, tuple)):
+        return [_canonical_payload(item) for item in value]
+    return value
+
+
+def stable_id(entity_type: str, normalized_content: Any) -> str:
+    """Return a deterministic stable ID from an entity type and normalized content."""
+    payload = {
+        "entity_type": _clean_text(entity_type).lower(),
+        "content": _canonical_payload(normalized_content),
+    }
+    encoded = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
+    digest = hashlib.sha256(encoded.encode("utf-8")).hexdigest()[:16]
+    return f"{payload['entity_type']}-{digest}"
+
+
+def utc_now() -> str:
+    return _dt.datetime.now(_dt.timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+@dataclass
+class EngineeringEntity:
+    stable_id: str
+    name: str
+    description: str = ""
+    source_references: list[str] = field(default_factory=list)
+    status: str = "draft"
+    warnings: list[str] = field(default_factory=list)
+
+    @classmethod
+    def make_stable_id(cls, name: str, description: str = "", extra: dict[str, Any] | None = None) -> str:
+        payload = {"name": _clean_text(name), "description": _clean_text(description)}
+        if extra:
+            payload.update(extra)
+        return stable_id(cls.__name__.lower(), payload)
+
+    def _base_dict(self) -> dict[str, Any]:
+        return {
+            "stable_id": self.stable_id,
+            "name": self.name,
+            "description": self.description,
+            "source_references": _sorted_texts(self.source_references),
+            "status": self.status,
+            "warnings": _sorted_texts(self.warnings),
+        }
+
+    @classmethod
+    def _base_kwargs(cls, data: dict[str, Any]) -> dict[str, Any]:
+        return {
+            "stable_id": str(data.get("stable_id", "")),
+            "name": str(data.get("name", "")),
+            "description": str(data.get("description", "")),
+            "source_references": [str(item) for item in data.get("source_references", [])],
+            "status": str(data.get("status", "")),
+            "warnings": [str(item) for item in data.get("warnings", [])],
+        }
+
+
+@dataclass
+class ASOTMetadata:
+    title: str
+    created_at_utc: str
+    source_package_filename: str
+    source_package_sha256: str
+    parsed_artifacts_sha256: str
+    generator_name: str
+    generator_version: str
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "title": self.title,
+            "created_at_utc": self.created_at_utc,
+            "source_package_filename": self.source_package_filename,
+            "source_package_sha256": self.source_package_sha256,
+            "parsed_artifacts_sha256": self.parsed_artifacts_sha256,
+            "generator_name": self.generator_name,
+            "generator_version": self.generator_version,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "ASOTMetadata":
+        return cls(
+            title=str(data.get("title", "")),
+            created_at_utc=str(data.get("created_at_utc", "")),
+            source_package_filename=str(data.get("source_package_filename", "")),
+            source_package_sha256=str(data.get("source_package_sha256", "")),
+            parsed_artifacts_sha256=str(data.get("parsed_artifacts_sha256", "")),
+            generator_name=str(data.get("generator_name", "")),
+            generator_version=str(data.get("generator_version", "")),
+        )
+
+
+@dataclass
+class Component(EngineeringEntity):
+    component_type: str = "unknown"
+    parent_component_id: str = ""
+    child_component_ids: list[str] = field(default_factory=list)
+    interface_ids: list[str] = field(default_factory=list)
+    parameter_ids: list[str] = field(default_factory=list)
+    behavior_ids: list[str] = field(default_factory=list)
+    geometry_ids: list[str] = field(default_factory=list)
+
+    def to_dict(self) -> dict[str, Any]:
+        data = self._base_dict()
+        data.update(
+            {
+                "component_type": self.component_type,
+                "parent_component_id": self.parent_component_id,
+                "child_component_ids": _sorted_texts(self.child_component_ids),
+                "interface_ids": _sorted_texts(self.interface_ids),
+                "parameter_ids": _sorted_texts(self.parameter_ids),
+                "behavior_ids": _sorted_texts(self.behavior_ids),
+                "geometry_ids": _sorted_texts(self.geometry_ids),
+            }
+        )
+        return data
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "Component":
+        return cls(
+            **cls._base_kwargs(data),
+            component_type=str(data.get("component_type", "")),
+            parent_component_id=str(data.get("parent_component_id", "")),
+            child_component_ids=[str(item) for item in data.get("child_component_ids", [])],
+            interface_ids=[str(item) for item in data.get("interface_ids", [])],
+            parameter_ids=[str(item) for item in data.get("parameter_ids", [])],
+            behavior_ids=[str(item) for item in data.get("behavior_ids", [])],
+            geometry_ids=[str(item) for item in data.get("geometry_ids", [])],
+        )
+
+
+@dataclass
+class Requirement(EngineeringEntity):
+    requirement_id: str = ""
+    text: str = ""
+    verification_method: str = ""
+    priority: str = ""
+    satisfied_by_ids: list[str] = field(default_factory=list)
+    verified_by_ids: list[str] = field(default_factory=list)
+
+    def to_dict(self) -> dict[str, Any]:
+        data = self._base_dict()
+        data.update(
+            {
+                "requirement_id": self.requirement_id,
+                "text": self.text,
+                "verification_method": self.verification_method,
+                "priority": self.priority,
+                "satisfied_by_ids": _sorted_texts(self.satisfied_by_ids),
+                "verified_by_ids": _sorted_texts(self.verified_by_ids),
+            }
+        )
+        return data
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "Requirement":
+        return cls(
+            **cls._base_kwargs(data),
+            requirement_id=str(data.get("requirement_id", "")),
+            text=str(data.get("text", "")),
+            verification_method=str(data.get("verification_method", "")),
+            priority=str(data.get("priority", "")),
+            satisfied_by_ids=[str(item) for item in data.get("satisfied_by_ids", [])],
+            verified_by_ids=[str(item) for item in data.get("verified_by_ids", [])],
+        )
+
+
+@dataclass
+class Interface(EngineeringEntity):
+    interface_type: str = "unknown"
+    source_component_id: str = ""
+    target_component_id: str = ""
+    port_names: list[str] = field(default_factory=list)
+    direction: str = ""
+    exchanged_items: list[str] = field(default_factory=list)
+
+    def to_dict(self) -> dict[str, Any]:
+        data = self._base_dict()
+        data.update(
+            {
+                "interface_type": self.interface_type,
+                "source_component_id": self.source_component_id,
+                "target_component_id": self.target_component_id,
+                "port_names": _sorted_texts(self.port_names),
+                "direction": self.direction,
+                "exchanged_items": _sorted_texts(self.exchanged_items),
+            }
+        )
+        return data
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "Interface":
+        return cls(
+            **cls._base_kwargs(data),
+            interface_type=str(data.get("interface_type", "")),
+            source_component_id=str(data.get("source_component_id", "")),
+            target_component_id=str(data.get("target_component_id", "")),
+            port_names=[str(item) for item in data.get("port_names", [])],
+            direction=str(data.get("direction", "")),
+            exchanged_items=[str(item) for item in data.get("exchanged_items", [])],
+        )
+
+
+@dataclass
+class Parameter(EngineeringEntity):
+    value: Any = None
+    unit: str = ""
+    minimum: Any = None
+    maximum: Any = None
+    symbolic_expression: str = ""
+    owning_component_id: str = ""
+
+    def to_dict(self) -> dict[str, Any]:
+        data = self._base_dict()
+        data.update(
+            {
+                "value": self.value,
+                "unit": self.unit,
+                "minimum": self.minimum,
+                "maximum": self.maximum,
+                "symbolic_expression": self.symbolic_expression,
+                "owning_component_id": self.owning_component_id,
+            }
+        )
+        return data
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "Parameter":
+        return cls(
+            **cls._base_kwargs(data),
+            value=data.get("value"),
+            unit=str(data.get("unit", "")),
+            minimum=data.get("minimum"),
+            maximum=data.get("maximum"),
+            symbolic_expression=str(data.get("symbolic_expression", "")),
+            owning_component_id=str(data.get("owning_component_id", "")),
+        )
+
+
+@dataclass
+class PhysicalModel(EngineeringEntity):
+    equation: str = ""
+    variables: list[str] = field(default_factory=list)
+    parameter_ids: list[str] = field(default_factory=list)
+    assumptions: list[str] = field(default_factory=list)
+    owning_component_ids: list[str] = field(default_factory=list)
+
+    def to_dict(self) -> dict[str, Any]:
+        data = self._base_dict()
+        data.update(
+            {
+                "equation": self.equation,
+                "variables": _sorted_texts(self.variables),
+                "parameter_ids": _sorted_texts(self.parameter_ids),
+                "assumptions": _sorted_texts(self.assumptions),
+                "owning_component_ids": _sorted_texts(self.owning_component_ids),
+            }
+        )
+        return data
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "PhysicalModel":
+        return cls(
+            **cls._base_kwargs(data),
+            equation=str(data.get("equation", "")),
+            variables=[str(item) for item in data.get("variables", [])],
+            parameter_ids=[str(item) for item in data.get("parameter_ids", [])],
+            assumptions=[str(item) for item in data.get("assumptions", [])],
+            owning_component_ids=[str(item) for item in data.get("owning_component_ids", [])],
+        )
+
+
+@dataclass
+class Behavior(EngineeringEntity):
+    behavior_type: str = "unknown"
+    states: list[str] = field(default_factory=list)
+    triggers: list[str] = field(default_factory=list)
+    actions: list[str] = field(default_factory=list)
+    owning_component_id: str = ""
+    generated_by: str = "human"
+    approval_status: str = "not_required"
+
+    def to_dict(self) -> dict[str, Any]:
+        data = self._base_dict()
+        data.update(
+            {
+                "behavior_type": self.behavior_type,
+                "states": _sorted_texts(self.states),
+                "triggers": _sorted_texts(self.triggers),
+                "actions": _sorted_texts(self.actions),
+                "owning_component_id": self.owning_component_id,
+                "generated_by": self.generated_by,
+                "approval_status": self.approval_status,
+            }
+        )
+        return data
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "Behavior":
+        return cls(
+            **cls._base_kwargs(data),
+            behavior_type=str(data.get("behavior_type", "")),
+            states=[str(item) for item in data.get("states", [])],
+            triggers=[str(item) for item in data.get("triggers", [])],
+            actions=[str(item) for item in data.get("actions", [])],
+            owning_component_id=str(data.get("owning_component_id", "")),
+            generated_by=str(data.get("generated_by", "")),
+            approval_status=str(data.get("approval_status", "")),
+        )
+
+
+@dataclass
+class GeometryRecord(EngineeringEntity):
+    source_relative_path: str = ""
+    geometry_format: str = ""
+    owning_component_id: str = ""
+    parser_status: str = "referenced_not_parsed"
+    coordinate_system: str = ""
+    unit: str = ""
+
+    def to_dict(self) -> dict[str, Any]:
+        data = self._base_dict()
+        data.update(
+            {
+                "source_relative_path": self.source_relative_path,
+                "geometry_format": self.geometry_format,
+                "owning_component_id": self.owning_component_id,
+                "parser_status": self.parser_status,
+                "coordinate_system": self.coordinate_system,
+                "unit": self.unit,
+            }
+        )
+        return data
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "GeometryRecord":
+        return cls(
+            **cls._base_kwargs(data),
+            source_relative_path=str(data.get("source_relative_path", "")),
+            geometry_format=str(data.get("geometry_format", "")),
+            owning_component_id=str(data.get("owning_component_id", "")),
+            parser_status=str(data.get("parser_status", "")),
+            coordinate_system=str(data.get("coordinate_system", "")),
+            unit=str(data.get("unit", "")),
+        )
+
+
+@dataclass
+class ProvenanceRecord:
+    provenance_id: str
+    source_relative_path: str
+    source_sha256: str
+    source_locator: str
+    parser_name: str
+    confidence: float | None = None
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "provenance_id": self.provenance_id,
+            "source_relative_path": self.source_relative_path,
+            "source_sha256": self.source_sha256,
+            "source_locator": self.source_locator,
+            "parser_name": self.parser_name,
+            "confidence": self.confidence,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "ProvenanceRecord":
+        return cls(
+            provenance_id=str(data.get("provenance_id", "")),
+            source_relative_path=str(data.get("source_relative_path", "")),
+            source_sha256=str(data.get("source_sha256", "")),
+            source_locator=str(data.get("source_locator", "")),
+            parser_name=str(data.get("parser_name", "")),
+            confidence=data.get("confidence"),
+        )
+
+
+@dataclass
+class ASOTValidationState:
+    errors: list[str] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {"errors": _sorted_texts(self.errors), "warnings": _sorted_texts(self.warnings)}
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "ASOTValidationState":
+        return cls(
+            errors=[str(item) for item in data.get("errors", [])],
+            warnings=[str(item) for item in data.get("warnings", [])],
+        )
+
+
+@dataclass
+class ASOTDocument:
+    schema_version: str
+    asot_id: str
+    metadata: ASOTMetadata
+    components: list[Component] = field(default_factory=list)
+    requirements: list[Requirement] = field(default_factory=list)
+    interfaces: list[Interface] = field(default_factory=list)
+    parameters: list[Parameter] = field(default_factory=list)
+    physical_models: list[PhysicalModel] = field(default_factory=list)
+    behaviors: list[Behavior] = field(default_factory=list)
+    geometry: list[GeometryRecord] = field(default_factory=list)
+    provenance: list[ProvenanceRecord] = field(default_factory=list)
+    validation: ASOTValidationState = field(default_factory=ASOTValidationState)
+
+    @classmethod
+    def minimal(cls, title: str, source_package_filename: str = "") -> "ASOTDocument":
+        metadata = ASOTMetadata(
+            title=title,
+            created_at_utc=utc_now(),
+            source_package_filename=source_package_filename,
+            source_package_sha256="",
+            parsed_artifacts_sha256="",
+            generator_name="de2sim",
+            generator_version="phase2a",
+        )
+        return cls(
+            schema_version=SUPPORTED_SCHEMA_VERSION,
+            asot_id=stable_id("asot", {"title": title, "source_package_filename": source_package_filename}),
+            metadata=metadata,
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "schema_version": self.schema_version,
+            "asot_id": self.asot_id,
+            "metadata": self.metadata.to_dict(),
+            "components": _sort_dicts([item.to_dict() for item in self.components], "stable_id"),
+            "requirements": _sort_dicts([item.to_dict() for item in self.requirements], "stable_id"),
+            "interfaces": _sort_dicts([item.to_dict() for item in self.interfaces], "stable_id"),
+            "parameters": _sort_dicts([item.to_dict() for item in self.parameters], "stable_id"),
+            "physical_models": _sort_dicts([item.to_dict() for item in self.physical_models], "stable_id"),
+            "behaviors": _sort_dicts([item.to_dict() for item in self.behaviors], "stable_id"),
+            "geometry": _sort_dicts([item.to_dict() for item in self.geometry], "stable_id"),
+            "provenance": _sort_dicts([item.to_dict() for item in self.provenance], "provenance_id"),
+            "validation": self.validation.to_dict(),
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "ASOTDocument":
+        return cls(
+            schema_version=str(data.get("schema_version", "")),
+            asot_id=str(data.get("asot_id", "")),
+            metadata=ASOTMetadata.from_dict(data.get("metadata", {}) if isinstance(data.get("metadata"), dict) else {}),
+            components=[Component.from_dict(item) for item in _dict_items(data.get("components", []))],
+            requirements=[Requirement.from_dict(item) for item in _dict_items(data.get("requirements", []))],
+            interfaces=[Interface.from_dict(item) for item in _dict_items(data.get("interfaces", []))],
+            parameters=[Parameter.from_dict(item) for item in _dict_items(data.get("parameters", []))],
+            physical_models=[PhysicalModel.from_dict(item) for item in _dict_items(data.get("physical_models", []))],
+            behaviors=[Behavior.from_dict(item) for item in _dict_items(data.get("behaviors", []))],
+            geometry=[GeometryRecord.from_dict(item) for item in _dict_items(data.get("geometry", []))],
+            provenance=[ProvenanceRecord.from_dict(item) for item in _dict_items(data.get("provenance", []))],
+            validation=ASOTValidationState.from_dict(
+                data.get("validation", {}) if isinstance(data.get("validation"), dict) else {}
+            ),
+        )
+
+
+def _sort_dicts(items: list[dict[str, Any]], key: str) -> list[dict[str, Any]]:
+    return sorted(items, key=lambda item: str(item.get(key, "")))
+
+
+def _dict_items(value: Any) -> list[dict[str, Any]]:
+    if not isinstance(value, list):
+        return []
+    return [item for item in value if isinstance(item, dict)]
+
+
+def normalize_asot_dict(data: dict[str, Any]) -> dict[str, Any]:
+    return ASOTDocument.from_dict(data).to_dict()

@@ -1,5 +1,16 @@
 # DE2Sim Architecture
 
+## Phase 2A Scope
+
+Phase 2A adds the versioned Authoritative Source of Truth (ASOT) schema,
+deterministic JSON I/O, and structural validation. It remains dependency-free
+and uses Python dataclasses plus the standard library only. The legacy DBbun
+content-to-simulator script remains unchanged.
+
+Phase 2A does not build ASOT records from parsed artifacts, compute provenance
+hashes, generate AI behavior, run simulations, export Godot projects, package
+outputs, or continue to Phase 2B.
+
 ## Phase 1B Scope
 
 Phase 1B builds on Phase 1A secure engineering-package ingestion by adding
@@ -35,8 +46,16 @@ de2sim/
     physical_model_reader.py
     requirement_reader.py
     sysml_v2_reader.py
+  asot/
+    __init__.py
+    schema.py
+    io.py
+    validators.py
 tests/
   __init__.py
+  test_asot_io.py
+  test_asot_schema.py
+  test_asot_validation.py
   test_artifact_parser.py
   test_geometry_manifest.py
   test_package_reader.py
@@ -106,11 +125,36 @@ and `.sysml.json` inputs. Deferred files are recorded in `deferred_files`.
 See `docs/DE2SIM_SUPPORTED_INPUTS.md` for the precise supported and deferred
 formats.
 
+## Phase 2A Behavior
+
+The ASOT package is available as a standalone library layer:
+
+```text
+de2sim.asot.schema
+de2sim.asot.io
+de2sim.asot.validators
+```
+
+The supported ASOT schema version is `de2sim.asot.v1`. ASOT JSON contains
+metadata, components, requirements, interfaces, parameters, physical models,
+behaviors, geometry, provenance placeholders, and validation state. Engineering
+entities use deterministic stable IDs derived from normalized content and entity
+type rather than random UUIDs.
+
+JSON I/O is deterministic, UTF-8, pretty-printed, and uses atomic file
+replacement. Structural validation returns errors and warnings separately and
+does not mutate the supplied ASOT. Validation detects duplicate IDs,
+unsupported schema versions, missing required top-level fields, broken
+references, invalid component hierarchy, invalid component/interface links,
+invalid ownership, and invalid behavior approval status.
+
+See `docs/ASOT_SCHEMA.md` for field-level schema details.
+
 ## Preserved Boundaries
 
 Phase 1B intentionally does not implement:
 
-- ASOT creation
+- ASOT record creation from parsed artifacts
 - AI behavior generation
 - simulation generation
 - Godot export
