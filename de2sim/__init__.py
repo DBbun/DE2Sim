@@ -1,3 +1,3 @@
-"""DE2Sim Phase 0 scaffold package."""
+"""DE2Sim package."""
 
-__version__ = "0.0.0-phase0"
+__version__ = "0.1.0-phase1a"
