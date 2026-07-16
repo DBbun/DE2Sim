@@ -1,5 +1,28 @@
 # DE2Sim Architecture
 
+## Phase 4B Scope
+
+Phase 4B refines the offline behavior proposal provider without adding
+simulation execution, Godot export, generated executable code, or automatic
+approval. The legacy DBbun script remains unchanged.
+
+When explicit ASOT evidence includes a low-battery return-to-base requirement,
+a battery-threshold parameter, and a source-derived `ReturnToBase` behavior or
+equivalent explicit action, the offline provider emits a single operational
+UAS proposal named `Low Battery Return-to-Base`. The state-machine order is
+`preflight -> mission_flight -> return_to_base -> landed`, guards use symbolic
+parameter names, source-derived behaviors are linked, and unresolved ownership
+is listed as an assumption rather than inferred.
+
+When the required evidence is absent, Phase 4B preserves Phase 4A generic
+offline proposal behavior and records a controlled warning describing the
+missing UAS evidence. Duplicate component definitions and instances with the
+same normalized name are suppressed for generic proposals.
+
+The behavior review page renders states in transition order, keeps transition
+labels clear of state circles, shows linked source-derived behaviors, and
+badges deterministic offline proposals as not generative AI.
+
 ## Phase 4A Scope
 
 Phase 4A adds AI-assisted behavior proposals, local human review, and explicit

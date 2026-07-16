@@ -83,7 +83,7 @@ def write_behavior_generation_outputs(
         "prompt_hash": proposal_payload["prompt_hash"],
         "warnings": sorted({warning for item in proposal_payload["proposals"] for warning in item.get("validation_warnings", [])}),
         "limitations": [
-            "Phase 4A produces review candidates only.",
+            "Phase 4B produces review candidates only.",
             "Offline candidates are deterministic templates, not generative-AI output.",
             "No simulation or executable behavior code is generated.",
         ],

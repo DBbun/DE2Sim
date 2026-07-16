@@ -9,7 +9,7 @@ import unittest
 import zipfile
 from pathlib import Path
 
-from de2sim.asot.builder import build_asot, build_asot_from_files, write_asot_outputs
+from de2sim.asot.builder import build_asot, build_asot_from_files, semantic_artifacts_sha256, write_asot_outputs
 from de2sim.asot.schema import ASOTDocument, ASOTMetadata, Component, SUPPORTED_SCHEMA_VERSION, stable_id
 from de2sim.asot.validators import validate_asot
 from de2sim.ingest.artifact_parser import parse_artifacts_from_manifest
@@ -189,6 +189,67 @@ class ASOTBuilderTests(unittest.TestCase):
                 self.assertEqual(ids, sorted(ids))
                 self.assertEqual(ids, [item["stable_id"] for item in second[section]])
             self.assertEqual(first["asot_id"], second["asot_id"])
+
+    def test_runtime_timestamp_does_not_affect_asot_or_entity_ids_and_inputs_are_not_mutated(self) -> None:
+        manifest = {
+            "package_filename": "uas.zip",
+            "package_sha256": "a" * 64,
+            "files": [
+                {"relative_path": "requirements/reqs.csv", "role": "requirements", "sha256": "b" * 64},
+                {"relative_path": "sysml/model.sysml.json", "role": "sysml", "sha256": "c" * 64},
+            ],
+        }
+        parsed = {
+            "schema_version": "de2sim.parsed_artifacts.v1",
+            "package_filename": "uas.zip",
+            "package_sha256": "a" * 64,
+            "package_manifest_sha256": "c" * 64,
+            "generated_at_utc": "2026-07-16T00:00:00Z",
+            "requirements": [
+                {
+                    "source_relative_path": "requirements/reqs.csv",
+                    "source_locator": "row:2",
+                    "parser_name": "requirement_reader.phase1b",
+                    "requirement_id": "REQ-1",
+                    "title": "Safe flight",
+                    "text": "Vehicle shall fly safely",
+                }
+            ],
+            "parameters": [],
+            "sysml_elements": [
+                {
+                    "source_relative_path": "sysml/model.sysml.json",
+                    "source_locator": "json:0",
+                    "parser_name": "sysml_v2_reader.phase1b",
+                    "kind": "part",
+                    "element_id": "uas",
+                    "name": "UAS",
+                }
+            ],
+            "sysml_relationships": [],
+            "physical_models": [],
+            "deferred_files": [],
+            "warnings": [],
+        }
+        second_parsed = copy.deepcopy(parsed)
+        second_parsed["generated_at_utc"] = "2026-07-16T00:00:01Z"
+        second_parsed["package_manifest_sha256"] = "d" * 64
+        manifest_before = copy.deepcopy(manifest)
+        parsed_before = copy.deepcopy(parsed)
+        second_parsed_before = copy.deepcopy(second_parsed)
+
+        first = build_asot(manifest, parsed, semantic_artifacts_sha256(parsed)).to_dict()
+        second = build_asot(manifest, second_parsed, semantic_artifacts_sha256(second_parsed)).to_dict()
+
+        self.assertEqual(semantic_artifacts_sha256(parsed), semantic_artifacts_sha256(second_parsed))
+        self.assertEqual(first["asot_id"], second["asot_id"])
+        for section in ("components", "requirements", "interfaces", "parameters", "physical_models", "behaviors", "geometry"):
+            self.assertEqual([item["stable_id"] for item in first[section]], [item["stable_id"] for item in second[section]])
+        self.assertEqual([item["provenance_id"] for item in first["provenance"]], [item["provenance_id"] for item in second["provenance"]])
+        self.assertEqual(normalized_asot(first), normalized_asot(second))
+        self.assertEqual(manifest, manifest_before)
+        self.assertEqual(parsed, parsed_before)
+        self.assertEqual(second_parsed, second_parsed_before)
 
     def test_duplicate_source_record_handling(self) -> None:
         manifest = {"package_filename": "dup.zip", "package_sha256": "a" * 64, "files": []}

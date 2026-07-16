@@ -26,6 +26,7 @@ class BehaviorProposal:
     referenced_requirement_ids: list[str] = field(default_factory=list)
     referenced_parameter_ids: list[str] = field(default_factory=list)
     referenced_physical_model_ids: list[str] = field(default_factory=list)
+    referenced_behavior_ids: list[str] = field(default_factory=list)
     source_provenance_ids: list[str] = field(default_factory=list)
     provider: str = ""
     model: str = ""
@@ -52,14 +53,15 @@ def behavior_proposal_to_dict(proposal: BehaviorProposal) -> dict[str, Any]:
         "description": proposal.description,
         "behavior_type": proposal.behavior_type,
         "owning_component_id": proposal.owning_component_id,
-        "states": _sorted_texts(proposal.states),
-        "transitions": sorted((_canonical(item) for item in proposal.transitions if isinstance(item, dict)), key=lambda item: json.dumps(item, sort_keys=True)),
+        "states": _ordered_texts(proposal.states),
+        "transitions": [_canonical(item) for item in proposal.transitions if isinstance(item, dict)],
         "triggers": _sorted_texts(proposal.triggers),
         "guards": _sorted_texts(proposal.guards),
         "actions": _sorted_texts(proposal.actions),
         "referenced_requirement_ids": _sorted_texts(proposal.referenced_requirement_ids),
         "referenced_parameter_ids": _sorted_texts(proposal.referenced_parameter_ids),
         "referenced_physical_model_ids": _sorted_texts(proposal.referenced_physical_model_ids),
+        "referenced_behavior_ids": _sorted_texts(proposal.referenced_behavior_ids),
         "source_provenance_ids": _sorted_texts(proposal.source_provenance_ids),
         "provider": proposal.provider,
         "model": proposal.model,
@@ -81,7 +83,7 @@ def behavior_proposal_from_dict(data: dict[str, Any]) -> BehaviorProposal:
         description=str(data.get("description", "")),
         behavior_type=str(data.get("behavior_type", "")),
         owning_component_id=str(data.get("owning_component_id", "")),
-        states=_list_text(data.get("states")),
+        states=_ordered_texts(data.get("states", []) if isinstance(data.get("states"), list) else _list_text(data.get("states"))),
         transitions=[dict(item) for item in data.get("transitions", []) if isinstance(item, dict)],
         triggers=_list_text(data.get("triggers")),
         guards=_list_text(data.get("guards")),
@@ -89,6 +91,7 @@ def behavior_proposal_from_dict(data: dict[str, Any]) -> BehaviorProposal:
         referenced_requirement_ids=_list_text(data.get("referenced_requirement_ids")),
         referenced_parameter_ids=_list_text(data.get("referenced_parameter_ids")),
         referenced_physical_model_ids=_list_text(data.get("referenced_physical_model_ids")),
+        referenced_behavior_ids=_list_text(data.get("referenced_behavior_ids")),
         source_provenance_ids=_list_text(data.get("source_provenance_ids")),
         provider=str(data.get("provider", "")),
         model=str(data.get("model", "")),
@@ -110,6 +113,7 @@ def validate_behavior_proposal(proposal: BehaviorProposal | dict[str, Any], asot
     requirement_ids = {str(record.get("stable_id", "")) for record in _items(asot.get("requirements"))}
     parameter_ids = {str(record.get("stable_id", "")) for record in _items(asot.get("parameters"))}
     model_ids = {str(record.get("stable_id", "")) for record in _items(asot.get("physical_models"))}
+    behavior_ids = {str(record.get("stable_id", "")) for record in _items(asot.get("behaviors"))}
     provenance_ids = {str(record.get("provenance_id", "")) for record in _items(asot.get("provenance"))}
     if not item.proposal_id:
         warnings.append("proposal is missing proposal_id")
@@ -119,8 +123,6 @@ def validate_behavior_proposal(proposal: BehaviorProposal | dict[str, Any], asot
         warnings.append(f"invalid approval_status: {item.approval_status}")
     if item.owning_component_id and item.owning_component_id not in component_ids:
         warnings.append(f"unknown owning_component_id: {item.owning_component_id}")
-    if not item.owning_component_id:
-        warnings.append("owning_component_id is required and must come from ASOT")
     for ref in item.referenced_requirement_ids:
         if ref not in requirement_ids:
             warnings.append(f"unknown referenced_requirement_id: {ref}")
@@ -130,6 +132,9 @@ def validate_behavior_proposal(proposal: BehaviorProposal | dict[str, Any], asot
     for ref in item.referenced_physical_model_ids:
         if ref not in model_ids:
             warnings.append(f"unknown referenced_physical_model_id: {ref}")
+    for ref in item.referenced_behavior_ids:
+        if ref not in behavior_ids:
+            warnings.append(f"unknown referenced_behavior_id: {ref}")
     for ref in item.source_provenance_ids:
         if ref not in provenance_ids:
             warnings.append(f"unknown source_provenance_id: {ref}")
@@ -146,7 +151,10 @@ def validate_behavior_proposal(proposal: BehaviorProposal | dict[str, Any], asot
 
 def _normalized_identity(payload: dict[str, Any]) -> dict[str, Any]:
     excluded = {"proposal_id", "generated_at_utc", "validation_warnings", "approval_status"}
-    return _canonical({key: value for key, value in payload.items() if key not in excluded})
+    normalized = {key: value for key, value in payload.items() if key not in excluded}
+    if not normalized.get("referenced_behavior_ids"):
+        normalized.pop("referenced_behavior_ids", None)
+    return _canonical(normalized)
 
 
 def _canonical(value: Any) -> Any:
@@ -162,6 +170,17 @@ def _canonical(value: Any) -> Any:
 
 def _sorted_texts(values: list[str]) -> list[str]:
     return sorted({str(item).strip() for item in values if str(item).strip()})
+
+
+def _ordered_texts(values: list[str]) -> list[str]:
+    ordered: list[str] = []
+    seen: set[str] = set()
+    for item in values:
+        text = str(item).strip()
+        if text and text not in seen:
+            ordered.append(text)
+            seen.add(text)
+    return ordered
 
 
 def _list_text(value: Any) -> list[str]:

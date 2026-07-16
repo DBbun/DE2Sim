@@ -27,17 +27,29 @@ class OfflineTemplateProvider:
     generated_by = "offline_template"
 
     def propose(self, prompt: dict[str, Any]) -> list[dict[str, Any]]:
+        self.model = "deterministic-template-v1"
         components = prompt.get("components", []) if isinstance(prompt.get("components"), list) else []
         requirements = prompt.get("requirements", []) if isinstance(prompt.get("requirements"), list) else []
         parameters = prompt.get("parameters", []) if isinstance(prompt.get("parameters"), list) else []
         models = prompt.get("physical_models", []) if isinstance(prompt.get("physical_models"), list) else []
         existing = prompt.get("existing_source_derived_behaviors", []) if isinstance(prompt.get("existing_source_derived_behaviors"), list) else []
         provenance = prompt.get("provenance_references", []) if isinstance(prompt.get("provenance_references"), list) else []
+        uas_evidence = _uas_operational_evidence(requirements, parameters, existing)
+        if uas_evidence["complete"]:
+            self.model = "deterministic-uas-template-v1"
+            return [_uas_operational_proposal(uas_evidence, provenance)]
+
+        missing_warning = _missing_uas_warning(uas_evidence)
         proposals = []
+        seen_component_names: set[str] = set()
         for component in components:
             component_id = str(component.get("stable_id", ""))
             if not component_id:
                 continue
+            normalized_name = _normalized_name(str(component.get("name") or component_id))
+            if normalized_name in seen_component_names:
+                continue
+            seen_component_names.add(normalized_name)
             reqs = _matching_requirements(requirements, provenance, component_id)
             params = _matching_parameters(parameters, component_id)
             ph_models = _matching_models(models, component_id, params)
@@ -70,6 +82,7 @@ class OfflineTemplateProvider:
                     "referenced_requirement_ids": [str(item.get("stable_id", "")) for item in reqs if item.get("stable_id")],
                     "referenced_parameter_ids": [str(item.get("stable_id", "")) for item in params if item.get("stable_id")],
                     "referenced_physical_model_ids": [str(item.get("stable_id", "")) for item in ph_models if item.get("stable_id")],
+                    "referenced_behavior_ids": [],
                     "source_provenance_ids": _source_ids(reqs + params + ph_models + existing, provenance),
                     "confidence": 0.55,
                     "assumptions": [
@@ -80,6 +93,7 @@ class OfflineTemplateProvider:
                         "Template behavior may be too generic for direct engineering use.",
                         "No simulation semantics are produced in Phase 4A.",
                     ],
+                    "validation_warnings": [missing_warning] if missing_warning else [],
                 }
             )
         return proposals
@@ -180,3 +194,174 @@ def _source_ids(records: list[dict[str, Any]], provenance: list[dict[str, Any]])
     if not ids:
         ids = {str(item.get("provenance_id", "")) for item in provenance[:3] if item.get("provenance_id")}
     return sorted(ids)
+
+
+def _uas_operational_evidence(
+    requirements: list[dict[str, Any]],
+    parameters: list[dict[str, Any]],
+    behaviors: list[dict[str, Any]],
+) -> dict[str, Any]:
+    low_battery_requirement = next((item for item in requirements if _is_low_battery_rtb_requirement(item)), None)
+    battery_threshold = next((item for item in parameters if _is_battery_threshold_parameter(item)), None)
+    return_to_base = next((item for item in behaviors if _is_return_to_base_behavior(item)), None)
+    max_speed_requirement = next((item for item in requirements if _is_max_speed_requirement(item)), None)
+    max_speed_parameter = next((item for item in parameters if _is_max_speed_parameter(item)), None)
+    battery_capacity = next((item for item in parameters if _is_battery_capacity_parameter(item)), None)
+    return {
+        "low_battery_requirement": low_battery_requirement,
+        "battery_threshold": battery_threshold,
+        "return_to_base": return_to_base,
+        "max_speed_requirement": max_speed_requirement,
+        "max_speed_parameter": max_speed_parameter,
+        "battery_capacity": battery_capacity,
+        "complete": bool(low_battery_requirement and battery_threshold and return_to_base),
+    }
+
+
+def _uas_operational_proposal(evidence: dict[str, Any], provenance: list[dict[str, Any]]) -> dict[str, Any]:
+    requirement = evidence["low_battery_requirement"]
+    threshold = evidence["battery_threshold"]
+    behavior = evidence["return_to_base"]
+    threshold_name = _symbolic_name(threshold)
+    max_speed_requirement = evidence.get("max_speed_requirement")
+    max_speed_parameter = evidence.get("max_speed_parameter")
+    battery_capacity = evidence.get("battery_capacity")
+    actions = [
+        "begin mission while respecting documented operating limits",
+        "invoke the explicit source-derived ReturnToBase behavior",
+        "land and terminate the mission",
+    ]
+    referenced_requirements = [str(requirement.get("stable_id", ""))]
+    referenced_parameters = [str(threshold.get("stable_id", ""))]
+    provenance_records = [requirement, threshold, behavior]
+    assumptions = [
+        "This proposal is a deterministic offline template and not generative-AI output.",
+        "Owning component is unresolved because explicit source evidence does not provide unambiguous ownership.",
+    ]
+    if max_speed_requirement and max_speed_parameter:
+        max_speed_name = _symbolic_name(max_speed_parameter)
+        referenced_requirements.append(str(max_speed_requirement.get("stable_id", "")))
+        referenced_parameters.append(str(max_speed_parameter.get("stable_id", "")))
+        provenance_records.extend([max_speed_requirement, max_speed_parameter])
+        actions[0] = f"begin mission while respecting documented operating limits, including {max_speed_name}"
+    if battery_capacity:
+        capacity_name = _symbolic_name(battery_capacity)
+        referenced_parameters.append(str(battery_capacity.get("stable_id", "")))
+        provenance_records.append(battery_capacity)
+        assumptions.append(f"{capacity_name} is available as a model input only and is not used as a trigger.")
+    transitions = [
+        {
+            "from": "preflight",
+            "to": "mission_flight",
+            "trigger": "mission_started",
+            "guard": "required mission evidence is available",
+            "action": actions[0],
+        },
+        {
+            "from": "mission_flight",
+            "to": "return_to_base",
+            "trigger": "battery_threshold_reached",
+            "guard": f"battery_state <= {threshold_name}",
+            "action": "invoke the explicit source-derived ReturnToBase behavior",
+        },
+        {
+            "from": "return_to_base",
+            "to": "landed",
+            "trigger": "home_position_reached",
+            "guard": "return-to-base behavior is active and home arrival is confirmed",
+            "action": "land and terminate the mission",
+        },
+    ]
+    return {
+        "name": "Low Battery Return-to-Base",
+        "description": "Deterministic operational UAS mission behavior assembled only from explicit low-battery return-to-base ASOT evidence.",
+        "behavior_type": "state_machine",
+        "owning_component_id": "",
+        "states": ["preflight", "mission_flight", "return_to_base", "landed"],
+        "transitions": transitions,
+        "triggers": ["mission_started", "battery_threshold_reached", "home_position_reached"],
+        "guards": [
+            "required mission evidence is available",
+            f"battery_state <= {threshold_name}",
+            "return-to-base behavior is active and home arrival is confirmed",
+        ],
+        "actions": actions,
+        "referenced_requirement_ids": [item for item in referenced_requirements if item],
+        "referenced_parameter_ids": [item for item in referenced_parameters if item],
+        "referenced_physical_model_ids": [],
+        "referenced_behavior_ids": [str(behavior.get("stable_id", ""))] if behavior.get("stable_id") else [],
+        "source_provenance_ids": _source_ids(provenance_records, provenance),
+        "confidence": 0.68,
+        "assumptions": assumptions,
+        "risks": [
+            "Simulation semantics have not yet been generated.",
+            "Mission start and home arrival events require later review before simulation execution.",
+        ],
+    }
+
+
+def _missing_uas_warning(evidence: dict[str, Any]) -> str:
+    missing = []
+    if not evidence.get("low_battery_requirement"):
+        missing.append("low-battery return-to-base requirement")
+    if not evidence.get("battery_threshold"):
+        missing.append("battery-threshold parameter")
+    if not evidence.get("return_to_base"):
+        missing.append("source-derived ReturnToBase behavior")
+    if not missing:
+        return ""
+    return "UAS operational behavior template not generated because required evidence is absent: " + ", ".join(missing)
+
+
+def _is_low_battery_rtb_requirement(item: dict[str, Any]) -> bool:
+    text = _evidence_text(item, ("requirement_id", "name", "text", "description"))
+    return _has_low_battery(text) and _has_return_to_base(text)
+
+
+def _is_battery_threshold_parameter(item: dict[str, Any]) -> bool:
+    text = _evidence_text(item, ("stable_id", "name", "description", "symbolic_expression"))
+    return "battery" in text and "threshold" in text
+
+
+def _is_return_to_base_behavior(item: dict[str, Any]) -> bool:
+    text = _evidence_text(item, ("stable_id", "name", "description", "behavior_type"))
+    nested = " ".join(str(value).lower() for key in ("states", "transitions", "triggers", "guards", "actions") for value in item.get(key, []) if not isinstance(value, dict))
+    if item.get("transitions"):
+        nested += " " + json.dumps(item.get("transitions"), sort_keys=True).lower()
+    return _has_return_to_base(text + " " + nested)
+
+
+def _is_max_speed_requirement(item: dict[str, Any]) -> bool:
+    text = _evidence_text(item, ("requirement_id", "name", "text", "description"))
+    return "maximum" in text and "speed" in text
+
+
+def _is_max_speed_parameter(item: dict[str, Any]) -> bool:
+    text = _evidence_text(item, ("stable_id", "name", "description", "symbolic_expression"))
+    return ("max" in text or "maximum" in text) and "speed" in text
+
+
+def _is_battery_capacity_parameter(item: dict[str, Any]) -> bool:
+    text = _evidence_text(item, ("stable_id", "name", "description", "symbolic_expression"))
+    return "battery" in text and "capacity" in text
+
+
+def _has_low_battery(text: str) -> bool:
+    return "battery" in text and ("low" in text or "depleted" in text or "minimum" in text)
+
+
+def _has_return_to_base(text: str) -> bool:
+    compact = text.replace("_", "").replace("-", "").replace(" ", "")
+    return ("return" in text and "base" in text) or "returntobase" in compact or "rtb" in text.split()
+
+
+def _evidence_text(item: dict[str, Any], keys: tuple[str, ...]) -> str:
+    return " ".join(str(item.get(key, "")) for key in keys).lower()
+
+
+def _symbolic_name(parameter: dict[str, Any]) -> str:
+    return str(parameter.get("name") or parameter.get("symbolic_expression") or parameter.get("stable_id") or "parameter").strip()
+
+
+def _normalized_name(value: str) -> str:
+    return "".join(ch.lower() for ch in value if ch.isalnum())

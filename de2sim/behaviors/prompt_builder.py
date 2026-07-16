@@ -22,6 +22,7 @@ REQUIRED_RESPONSE_SCHEMA = {
             "referenced_requirement_ids": ["ASOT requirement stable_id"],
             "referenced_parameter_ids": ["ASOT parameter stable_id"],
             "referenced_physical_model_ids": ["ASOT physical model stable_id"],
+            "referenced_behavior_ids": ["ASOT source-derived behavior stable_id"],
             "source_provenance_ids": ["ASOT provenance_id"],
             "confidence": 0.0,
             "assumptions": ["string"],

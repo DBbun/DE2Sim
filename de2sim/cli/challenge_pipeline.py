@@ -25,7 +25,7 @@ _PHASE0_MESSAGE = (
     "DE2Sim Phase 0 scaffold is installed, but engineering-package ingestion "
     "is not implemented yet."
 )
-_CLI_VERSION = "0.4.0-phase4a"
+_CLI_VERSION = "0.4.1-phase4b"
 
 
 def build_parser() -> argparse.ArgumentParser:

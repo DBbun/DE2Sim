@@ -45,10 +45,10 @@ class BehaviorCLITests(unittest.TestCase):
             approved = json.loads((output / "asot_with_approved_behaviors.json").read_text(encoding="utf-8"))
             self.assertIn("offline_template", {item["generated_by"] for item in approved["behaviors"]})
 
-    def test_version_reports_phase4a(self) -> None:
+    def test_version_reports_phase4b(self) -> None:
         result = self.run_cli("--version")
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("DE2Sim v0.4.0-phase4a", result.stdout)
+        self.assertIn("DE2Sim v0.4.1-phase4b", result.stdout)
 
 
 if __name__ == "__main__":

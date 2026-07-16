@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import hashlib
 import json
 from pathlib import Path
@@ -63,11 +64,13 @@ def build_asot_from_files(manifest_path: Path | str, parsed_artifacts_path: Path
     parsed_file = Path(parsed_artifacts_path)
     manifest = load_json(manifest_file, "package_manifest")
     parsed = load_json(parsed_file, "parsed_artifacts")
-    return build_asot(manifest, parsed, sha256_file(parsed_file))
+    return build_asot(manifest, parsed, semantic_artifacts_sha256(parsed))
 
 
 def build_asot(manifest: dict[str, Any], parsed: dict[str, Any], parsed_artifacts_sha256: str) -> ASOTDocument:
     """Build a normalized ASOT from already loaded Phase 1 outputs."""
+    manifest = copy.deepcopy(manifest)
+    parsed = copy.deepcopy(parsed)
     warnings: list[str] = []
     source_sha_by_path = {
         _text(item.get("relative_path")): _text(item.get("sha256"))
@@ -742,6 +745,24 @@ def _format(item: dict[str, Any]) -> str:
 
 def _write_json(payload: dict[str, Any], path: Path) -> None:
     path.write_text(json.dumps(payload, indent=2, sort_keys=False, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
+
+
+def semantic_artifacts_sha256(payload: dict[str, Any]) -> str:
+    """Hash parsed-artifact content without runtime metadata."""
+    encoded = json.dumps(_stable_hash_payload(payload), sort_keys=True, separators=(",", ":"), ensure_ascii=True)
+    return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
+
+
+def _stable_hash_payload(value: Any) -> Any:
+    if isinstance(value, dict):
+        return {
+            str(key): _stable_hash_payload(value[key])
+            for key in sorted(value)
+            if str(key) not in {"generated_at_utc", "package_manifest_sha256"}
+        }
+    if isinstance(value, list):
+        return [_stable_hash_payload(item) for item in value]
+    return value
 
 
 def _traceability_status(source_references: list[str], provided_status: str) -> str:
