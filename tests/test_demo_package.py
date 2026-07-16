@@ -188,11 +188,12 @@ class DemoPackageTests(unittest.TestCase):
             second = build_demo_package(engineering, approved, behavior_dir, simulation_dir, out2, "DE2Sim v0.6.0-phase6a", "Ran 139 tests OK")
             self.assertEqual(first["zip"].read_bytes(), second["zip"].read_bytes())
             dashboard = first["dashboard"].read_text(encoding="utf-8")
-            self.assertIn("Eight-Stage Pipeline", dashboard)
-            self.assertNotIn("Seven-Stage Pipeline", dashboard)
+            self.assertIn("Nine-Stage Pipeline", dashboard)
+            self.assertNotIn("Eight-Stage Pipeline", dashboard)
             for stage in (
                 "Engineering Package",
                 "Parsed Artifacts",
+                "CAD Geometry Transformation",
                 "ASOT",
                 "Provenance and Traceability",
                 "Behavior Proposal",

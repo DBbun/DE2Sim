@@ -70,6 +70,7 @@ def validate_asot(asot: ASOTDocument | dict[str, Any]) -> ValidationResult:
         errors,
     )
     _validate_owned_records(document, component_ids, parameter_ids, errors)
+    _validate_geometry_records(document, component_ids, parameter_ids, errors)
     _validate_requirements(document, known_ids, errors)
     _validate_approval_status(document, errors)
 
@@ -252,6 +253,42 @@ def _validate_owned_records(
         for parameter_id in model.parameter_ids:
             if parameter_id not in parameter_ids:
                 errors.append(f"physical model {model.stable_id} references nonexistent parameter_id: {parameter_id}")
+
+
+def _validate_geometry_records(
+    document: ASOTDocument,
+    component_ids: set[str],
+    parameter_ids: set[str],
+    errors: list[str],
+) -> None:
+    physical_model_ids = {item.stable_id for item in document.physical_models}
+    for geometry in document.geometry:
+        if geometry.parser_status != "parsed":
+            continue
+        if geometry.unit and geometry.unit not in {"m"}:
+            errors.append(f"geometry {geometry.stable_id} has invalid unit: {geometry.unit}")
+        if geometry.authoritativeness and geometry.authoritativeness not in {"not_vendor_authoritative"}:
+            errors.append(f"geometry {geometry.stable_id} has invalid authoritativeness value: {geometry.authoritativeness}")
+        if not geometry.source_sha256:
+            errors.append(f"geometry {geometry.stable_id} is missing source hash")
+        if geometry.facet_count <= 0 or geometry.vertex_count <= 0 or geometry.unique_vertex_count <= 0:
+            errors.append(f"geometry {geometry.stable_id} has invalid dimensions or facet counts")
+        for field_name in ("bounding_box_min", "bounding_box_max", "dimensions", "center"):
+            value = getattr(geometry, field_name)
+            if not isinstance(value, dict) or any(axis not in value for axis in ("x", "y", "z")):
+                errors.append(f"geometry {geometry.stable_id} has invalid {field_name}")
+        for dimension in geometry.dimensions.values():
+            if not isinstance(dimension, (int, float)) or dimension <= 0:
+                errors.append(f"geometry {geometry.stable_id} has invalid dimensions")
+        for component_id in geometry.linked_component_ids:
+            if component_id not in component_ids:
+                errors.append(f"geometry {geometry.stable_id} references nonexistent linked_component_id: {component_id}")
+        for model_id in geometry.linked_physical_model_ids:
+            if model_id not in physical_model_ids:
+                errors.append(f"geometry {geometry.stable_id} references nonexistent linked_physical_model_id: {model_id}")
+        for parameter_id in geometry.linked_parameter_ids:
+            if parameter_id not in parameter_ids:
+                errors.append(f"geometry {geometry.stable_id} references nonexistent linked_parameter_id: {parameter_id}")
 
 
 def _validate_requirements(document: ASOTDocument, known_ids: set[str], errors: list[str]) -> None:

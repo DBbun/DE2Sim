@@ -27,6 +27,7 @@ from de2sim.asot.schema import (
 )
 from de2sim.asot.validators import validate_asot
 from de2sim.provenance.trace import classify_locator
+from de2sim.geometry.pipeline import geometry_record_from_extraction, validate_geometry_extraction
 
 
 GENERATOR_NAME = "de2sim.asot.builder"
@@ -88,7 +89,7 @@ def build_asot(manifest: dict[str, Any], parsed: dict[str, Any], parsed_artifact
     interfaces = _build_interfaces(parsed, provenance_by_key, source_to_component, name_to_component, warnings)
     physical_models = _build_physical_models(parsed, provenance_by_key, parameters, warnings)
     behaviors = _build_behaviors(parsed, provenance_by_key)
-    geometry = _build_geometry(manifest, provenance_by_key)
+    geometry = _build_geometry(manifest, parsed, provenance_by_key, components, parameters, physical_models, provenance, warnings)
 
     _apply_component_relationships(components, source_to_component, name_to_component, parsed, warnings)
     _attach_component_lists(components, interfaces, parameters, behaviors, geometry)
@@ -558,13 +559,39 @@ def _build_behaviors(parsed: dict[str, Any], provenance_by_key: dict[tuple[str, 
     return _sort_entities(records)
 
 
-def _build_geometry(manifest: dict[str, Any], provenance_by_key: dict[tuple[str, str, str], str]) -> list[GeometryRecord]:
+def _build_geometry(
+    manifest: dict[str, Any],
+    parsed: dict[str, Any],
+    provenance_by_key: dict[tuple[str, str, str], str],
+    components: list[Component],
+    parameters: list[Parameter],
+    physical_models: list[PhysicalModel],
+    provenance: list[ProvenanceRecord],
+    warnings: list[str],
+) -> list[GeometryRecord]:
     records: dict[str, GeometryRecord] = {}
+    for extraction in _items(parsed.get("geometry_extractions")):
+        temp_asot = {
+            "components": [item.to_dict() for item in components],
+            "parameters": [item.to_dict() for item in parameters],
+            "physical_models": [item.to_dict() for item in physical_models],
+            "provenance": [item.to_dict() for item in provenance],
+        }
+        validation, linkage_report = validate_geometry_extraction(extraction, temp_asot)
+        if not validation.get("valid"):
+            warnings.extend([f"geometry validation failed: {error}" for error in validation.get("errors", [])])
+        payload = geometry_record_from_extraction(extraction, validation, linkage_report)
+        sid = _text(payload.get("stable_id"))
+        records.setdefault(sid, GeometryRecord.from_dict(payload))
     for item in _items(manifest.get("files")):
         if _text(item.get("role")) != "geometry":
             continue
         rel = _text(item.get("relative_path"))
         if not rel:
+            continue
+        if any(_text(_dict(extraction.get("geometry")).get("source_path")) == rel for extraction in _items(parsed.get("geometry_extractions"))):
+            continue
+        if rel == "geometry/geometry_linkage.json":
             continue
         evidence = {"source_relative_path": rel, "sha256": _text(item.get("sha256")), "format": _format(item)}
         sid = stable_id("geometry", evidence)
@@ -737,6 +764,10 @@ def _list_text(value: Any) -> list[str]:
     if _text(value):
         return [_text(value)]
     return []
+
+
+def _dict(value: Any) -> dict[str, Any]:
+    return value if isinstance(value, dict) else {}
 
 
 def _format(item: dict[str, Any]) -> str:

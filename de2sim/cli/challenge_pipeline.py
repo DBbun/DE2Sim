@@ -12,6 +12,7 @@ from de2sim.asot.builder import ASOTBuildError, build_asot_from_files, load_json
 from de2sim.behaviors.approval import BehaviorApprovalError, load_decisions, write_behavior_approval_outputs
 from de2sim.behaviors.proposal_generator import BehaviorProposalError, build_external_generation_audit, load_behavior_proposals, write_behavior_generation_outputs
 from de2sim.demo import DemoPackageError, build_demo_package
+from de2sim.geometry.pipeline import GeometryError, validate_geometry_extraction, write_geometry_outputs
 from de2sim.ingest.artifact_parser import ArtifactParsingError, parse_artifacts_from_manifest
 from de2sim.ingest.package_reader import (
     PackageValidationError,
@@ -28,7 +29,7 @@ _PHASE0_MESSAGE = (
     "DE2Sim Phase 0 scaffold is installed, but engineering-package ingestion "
     "is not implemented yet."
 )
-_CLI_VERSION = "0.6.5-phase6b-local"
+_CLI_VERSION = "0.7.0-phase6c-geometry"
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -71,6 +72,16 @@ def build_parser() -> argparse.ArgumentParser:
         "--build-viewer",
         action="store_true",
         help="Run all prior stages and generate the standalone ASOT traceability viewer.",
+    )
+    parser.add_argument(
+        "--extract-geometry",
+        action="store_true",
+        help="Run ingestion, parsing, ASOT construction, and Phase 6C STL geometry extraction/validation.",
+    )
+    parser.add_argument(
+        "--build-geometry-viewer",
+        action="store_true",
+        help="Run Phase 6C geometry extraction/validation and generate the standalone geometry viewer.",
     )
     parser.add_argument(
         "--propose-behaviors",
@@ -159,7 +170,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     if args.version:
-        print(f"DE2Sim v{_CLI_VERSION} (supersedes DE2Sim v0.6.4-phase6b-local; supersedes DE2Sim v0.6.3-phase6b-local; supersedes DE2Sim v0.6.2-phase6b-local; supersedes DE2Sim v0.6.1-phase6b; supersedes DE2Sim v0.6.0-phase6a; supersedes DE2Sim v0.5.0-phase5a; supersedes DE2Sim v0.4.1-phase4b; supersedes DE2Sim v0.3.2-phase3c; supersedes DE2Sim v0.3.1-phase3b; supersedes DE2Sim v0.3.0-phase3a; supersedes DE2Sim v0.2.0-phase2b)")
+        print(f"DE2Sim v{_CLI_VERSION} (supersedes DE2Sim v0.6.5-phase6b-local; supersedes DE2Sim v0.6.4-phase6b-local; supersedes DE2Sim v0.6.3-phase6b-local; supersedes DE2Sim v0.6.2-phase6b-local; supersedes DE2Sim v0.6.1-phase6b; supersedes DE2Sim v0.6.0-phase6a; supersedes DE2Sim v0.5.0-phase5a; supersedes DE2Sim v0.4.1-phase4b; supersedes DE2Sim v0.3.2-phase3c; supersedes DE2Sim v0.3.1-phase3b; supersedes DE2Sim v0.3.0-phase3a; supersedes DE2Sim v0.2.0-phase2b)")
         return 0
 
     if args.build_demo_package:
@@ -265,7 +276,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 2
 
     print(manifest_path)
-    if args.parse_artifacts or args.build_asot or args.build_provenance or args.build_viewer or args.propose_behaviors or args.apply_behavior_decisions:
+    if args.parse_artifacts or args.build_asot or args.build_provenance or args.build_viewer or args.extract_geometry or args.build_geometry_viewer or args.propose_behaviors or args.apply_behavior_decisions:
         try:
             parsed_path = parse_artifacts_from_manifest(manifest_path)
         except ArtifactParsingError as exc:
@@ -275,7 +286,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     else:
         return 0
 
-    if args.build_asot or args.build_provenance or args.build_viewer or args.propose_behaviors or args.apply_behavior_decisions:
+    if args.build_asot or args.build_provenance or args.build_viewer or args.extract_geometry or args.build_geometry_viewer or args.propose_behaviors or args.apply_behavior_decisions:
         try:
             parsed = load_json(parsed_path, "parsed_artifacts")
             document = build_asot_from_files(manifest_path, parsed_path)
@@ -288,6 +299,28 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(outputs["validation"])
         if outputs["asot"].name == "asot_invalid.json":
             return 4
+        if args.extract_geometry or args.build_geometry_viewer:
+            try:
+                parsed_payload = load_json(parsed_path, "parsed_artifacts")
+                extractions = parsed_payload.get("geometry_extractions", [])
+                if not isinstance(extractions, list) or not extractions:
+                    print("error: supported STL geometry and geometry_linkage.json are required", file=sys.stderr)
+                    return 2
+                asot_payload = load_json(outputs["asot"], "asot")
+                validation, linkage_report = validate_geometry_extraction(extractions[0], asot_payload)
+                geometry_outputs = write_geometry_outputs(extractions[0], validation, linkage_report, Path(args.output))
+            except (ASOTBuildError, GeometryError) as exc:
+                print(f"error: {exc}", file=sys.stderr)
+                return 2
+            print(geometry_outputs["geometry_extraction"])
+            print(geometry_outputs["geometry_validation"])
+            print(geometry_outputs["geometry_linkage_report"])
+            print(geometry_outputs["geometry_scene"])
+            if args.build_geometry_viewer:
+                print(geometry_outputs["geometry_viewer"])
+            if not validation.get("valid", False):
+                print("error: geometry validation failed", file=sys.stderr)
+                return 4
         if args.build_provenance or args.build_viewer or args.propose_behaviors:
             try:
                 package_manifest = load_json(manifest_path, "package_manifest")

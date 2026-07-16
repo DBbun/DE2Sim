@@ -215,6 +215,7 @@ def parse_artifacts_from_manifest(manifest_path: Path | str) -> Path:
     sysml_elements: list[dict[str, Any]] = []
     sysml_relationships: list[dict[str, Any]] = []
     physical_models: list[dict[str, Any]] = []
+    geometry_extractions: list[dict[str, Any]] = []
     deferred_files: list[dict[str, str]] = []
     warnings: list[str] = []
 
@@ -226,15 +227,35 @@ def parse_artifacts_from_manifest(manifest_path: Path | str) -> Path:
         try:
             source_path = _safe_source_path(extraction_root, relative_path)
             if role == "geometry":
-                status = "referenced_not_parsed"
-                deferred_files.append(
-                    _deferred_entry(
-                        relative_path,
-                        role,
-                        "geometry files are referenced but not parsed in Phase 1B",
-                        "future geometry/CAD parser",
+                if relative_path == "geometry/geometry_linkage.json":
+                    from de2sim.geometry.pipeline import GeometryError, extract_geometry_from_package
+
+                    try:
+                        geometry_extractions.append(extract_geometry_from_package(extraction_root, relative_path))
+                        status = "parsed"
+                    except GeometryError as exc:
+                        status = "failed"
+                        warnings.append(f"{relative_path}: {exc}")
+                elif extension == ".stl":
+                    status = "referenced_not_parsed"
+                    deferred_files.append(
+                        _deferred_entry(
+                            relative_path,
+                            role,
+                            "STL parsing requires explicit geometry/geometry_linkage.json metadata",
+                            "de2sim Phase 6C geometry parser",
+                        )
                     )
-                )
+                else:
+                    status = "referenced_not_parsed"
+                    deferred_files.append(
+                        _deferred_entry(
+                            relative_path,
+                            role,
+                            "geometry files are referenced but not parsed in Phase 1B",
+                            "future geometry/CAD parser",
+                        )
+                    )
             elif extension in DEFERRED_EXTENSIONS:
                 status = "deferred"
                 recommended = {
@@ -295,6 +316,7 @@ def parse_artifacts_from_manifest(manifest_path: Path | str) -> Path:
         "sysml_elements": _sort_records(sysml_elements),
         "sysml_relationships": _sort_records(sysml_relationships),
         "physical_models": _sort_records(physical_models),
+        "geometry_extractions": sorted(geometry_extractions, key=lambda item: str(item.get("geometry_id", ""))),
         "deferred_files": sorted(deferred_files, key=lambda item: (item["source_relative_path"], item["role"])),
         "warnings": sorted(set(warnings)),
         "record_counts": {
@@ -303,6 +325,7 @@ def parse_artifacts_from_manifest(manifest_path: Path | str) -> Path:
             "sysml_elements": len(sysml_elements),
             "sysml_relationships": len(sysml_relationships),
             "physical_models": len(physical_models),
+            "geometry_extractions": len(geometry_extractions),
             "deferred_files": len(deferred_files),
             "warnings": len(set(warnings)),
         },

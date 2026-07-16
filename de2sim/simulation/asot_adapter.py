@@ -65,6 +65,7 @@ def extract_simulation_facts(asot: ASOTDocument | dict[str, Any]) -> SimulationA
     for item in (low_req, speed_req, params["battery_threshold"], params["battery_capacity"], params["max_speed"], source_rtb):
         provenance_ids.update(_list_text(item.get("source_references")))
         provenance_ids.update(_list_text(item.get("source_provenance_ids")))
+    geometry = _simulation_geometry(payload)
 
     return SimulationASOTFacts(
         asot_id=_text(payload.get("asot_id")),
@@ -83,6 +84,7 @@ def extract_simulation_facts(asot: ASOTDocument | dict[str, Any]) -> SimulationA
         battery_capacity_parameter_id=_text(params["battery_capacity"].get("stable_id")),
         max_speed_parameter_id=_text(params["max_speed"].get("stable_id")),
         provenance_ids=tuple(sorted(provenance_ids)),
+        geometry=geometry,
     )
 
 
@@ -143,6 +145,22 @@ def _known_ids(payload: dict[str, Any]) -> set[str]:
         ids.update(_text(item.get("stable_id")) for item in _items(payload.get(section)))
     ids.update(_text(item.get("provenance_id")) for item in _items(payload.get("provenance")))
     return {item for item in ids if item}
+
+
+def _simulation_geometry(payload: dict[str, Any]) -> dict[str, Any]:
+    parsed = [item for item in _items(payload.get("geometry")) if _text(item.get("parser_status")) == "parsed"]
+    if not parsed:
+        return {}
+    geometry = parsed[0]
+    return {
+        "geometry_id": _text(geometry.get("stable_id")),
+        "geometry_source_format": _text(geometry.get("source_format") or geometry.get("geometry_format")),
+        "geometry_dimensions": geometry.get("dimensions") if isinstance(geometry.get("dimensions"), dict) else {},
+        "geometry_unit": _text(geometry.get("unit")),
+        "geometry_authoritativeness": _text(geometry.get("authoritativeness")),
+        "geometry_used_for_visualization": True,
+        "geometry_used_for_flight_dynamics": False,
+    }
 
 
 def _items(value: Any) -> list[dict[str, Any]]:

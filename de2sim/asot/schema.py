@@ -459,6 +459,24 @@ class GeometryRecord(EngineeringEntity):
     parser_status: str = "referenced_not_parsed"
     coordinate_system: str = ""
     unit: str = ""
+    source_path: str = ""
+    source_sha256: str = ""
+    source_format: str = ""
+    source_classification: str = ""
+    authoritativeness: str = ""
+    facet_count: int = 0
+    vertex_count: int = 0
+    unique_vertex_count: int = 0
+    bounding_box_min: dict[str, Any] = field(default_factory=dict)
+    bounding_box_max: dict[str, Any] = field(default_factory=dict)
+    dimensions: dict[str, Any] = field(default_factory=dict)
+    center: dict[str, Any] = field(default_factory=dict)
+    linked_component_ids: list[str] = field(default_factory=list)
+    linked_physical_model_ids: list[str] = field(default_factory=list)
+    linked_parameter_ids: list[str] = field(default_factory=list)
+    source_provenance_ids: list[str] = field(default_factory=list)
+    validation_status: str = ""
+    limitations: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
         data = self._base_dict()
@@ -470,6 +488,24 @@ class GeometryRecord(EngineeringEntity):
                 "parser_status": self.parser_status,
                 "coordinate_system": self.coordinate_system,
                 "unit": self.unit,
+                "source_path": self.source_path,
+                "source_sha256": self.source_sha256,
+                "source_format": self.source_format,
+                "source_classification": self.source_classification,
+                "authoritativeness": self.authoritativeness,
+                "facet_count": self.facet_count,
+                "vertex_count": self.vertex_count,
+                "unique_vertex_count": self.unique_vertex_count,
+                "bounding_box_min": _canonical_payload(self.bounding_box_min),
+                "bounding_box_max": _canonical_payload(self.bounding_box_max),
+                "dimensions": _canonical_payload(self.dimensions),
+                "center": _canonical_payload(self.center),
+                "linked_component_ids": _sorted_texts(self.linked_component_ids),
+                "linked_physical_model_ids": _sorted_texts(self.linked_physical_model_ids),
+                "linked_parameter_ids": _sorted_texts(self.linked_parameter_ids),
+                "source_provenance_ids": _sorted_texts(self.source_provenance_ids),
+                "validation_status": self.validation_status,
+                "limitations": _sorted_texts(self.limitations),
             }
         )
         return data
@@ -484,6 +520,24 @@ class GeometryRecord(EngineeringEntity):
             parser_status=str(data.get("parser_status", "")),
             coordinate_system=str(data.get("coordinate_system", "")),
             unit=str(data.get("unit", "")),
+            source_path=str(data.get("source_path", "")),
+            source_sha256=str(data.get("source_sha256", "")),
+            source_format=str(data.get("source_format", "")),
+            source_classification=str(data.get("source_classification", "")),
+            authoritativeness=str(data.get("authoritativeness", "")),
+            facet_count=int(data.get("facet_count", 0) or 0),
+            vertex_count=int(data.get("vertex_count", 0) or 0),
+            unique_vertex_count=int(data.get("unique_vertex_count", 0) or 0),
+            bounding_box_min=dict(data.get("bounding_box_min", {})) if isinstance(data.get("bounding_box_min"), dict) else {},
+            bounding_box_max=dict(data.get("bounding_box_max", {})) if isinstance(data.get("bounding_box_max"), dict) else {},
+            dimensions=dict(data.get("dimensions", {})) if isinstance(data.get("dimensions"), dict) else {},
+            center=dict(data.get("center", {})) if isinstance(data.get("center"), dict) else {},
+            linked_component_ids=[str(item) for item in data.get("linked_component_ids", [])],
+            linked_physical_model_ids=[str(item) for item in data.get("linked_physical_model_ids", [])],
+            linked_parameter_ids=[str(item) for item in data.get("linked_parameter_ids", [])],
+            source_provenance_ids=[str(item) for item in data.get("source_provenance_ids", [])],
+            validation_status=str(data.get("validation_status", "")),
+            limitations=[str(item) for item in data.get("limitations", [])],
         )
 
 

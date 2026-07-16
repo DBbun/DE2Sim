@@ -77,6 +77,8 @@ def classify_package_member(relative_path: str) -> tuple[str, list[str]]:
     warnings: list[str] = []
     path = PurePosixPath(relative_path)
     extension = normalized_extension(relative_path)
+    if path.name.lower() == "readme.md":
+        return "documentation", warnings
 
     folder_role = None
     for parent in path.parts[:-1]:

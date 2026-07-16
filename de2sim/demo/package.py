@@ -60,6 +60,14 @@ OPTIONAL_BEHAVIOR = {
     "ollama_model_output.json": ("artifacts/ollama_model_output.json", "artifact", "ai_evidence", "Ollama model output diagnostics"),
 }
 
+OPTIONAL_GEOMETRY = {
+    "geometry_extraction.json": ("artifacts/geometry_extraction.json", "artifact", "geometry", "Geometry extraction"),
+    "geometry_validation.json": ("artifacts/geometry_validation.json", "artifact", "geometry", "Geometry validation"),
+    "geometry_linkage_report.json": ("artifacts/geometry_linkage_report.json", "artifact", "geometry", "Geometry linkage report"),
+    "geometry_scene.json": ("artifacts/geometry_scene.json", "artifact", "geometry", "Geometry browser scene"),
+    "geometry_viewer.html": ("viewers/geometry_viewer.html", "viewer", "geometry", "Geometry viewer"),
+}
+
 
 def build_demo_package(
     engineering_package: Path | str,
@@ -91,8 +99,12 @@ def build_demo_package(
     for name, (rel, category, stage, description) in OPTIONAL_BEHAVIOR.items():
         if (behavior_dir / name).is_file():
             _copy_file(behavior_dir / name, root / rel, copied, category, stage, description, False, "generated")
+    for name, (rel, category, stage, description) in OPTIONAL_GEOMETRY.items():
+        if (behavior_dir / name).is_file():
+            _copy_file(behavior_dir / name, root / rel, copied, category, stage, description, False, "generated")
     for name, (rel, category, stage, description) in REQUIRED_SIMULATION.items():
         _copy_file(simulation_dir / name, root / rel, copied, category, stage, description, True, "generated")
+    _copy_source_geometry(source_zip, root, copied)
 
     data = _load_all(root)
     _validate_consistency(data)
@@ -102,6 +114,12 @@ def build_demo_package(
     reports = _reports(data, cli_version, test_summary, ai_evidence)
     for rel, text in reports.items():
         (root / rel).write_text(text, encoding="utf-8", newline="\n")
+    if _geometry_card(data).get("available"):
+        (root / "reports" / "geometry_integration_summary.md").write_text(
+            _geometry_integration_summary(data),
+            encoding="utf-8",
+            newline="\n",
+        )
     _write_evidence_matrix(root / "reports" / "evidence_matrix.csv")
     dashboard = _dashboard(data, ai_evidence)
     (root / "demo_dashboard.html").write_text(dashboard, encoding="utf-8", newline="\n")
@@ -116,8 +134,10 @@ def build_demo_package(
         ("reports/demo_script.md", "report", "demo", "Demo script"),
         ("reports/evidence_matrix.csv", "report", "demo", "Evidence matrix"),
         ("reports/ai_generation_evidence.json", "report", "ai_evidence", "AI generation evidence"),
+        ("reports/geometry_integration_summary.md", "report", "geometry", "Geometry integration summary"),
     ):
-        _append_manifest(root / rel, copied, category, stage, description, True, "generated")
+        if (root / rel).is_file():
+            _append_manifest(root / rel, copied, category, stage, description, True, "generated")
     manifest = _manifest(root, copied)
     _write_json(manifest, root / "manifests" / "submission_manifest.json")
     _append_manifest(root / "manifests" / "submission_manifest.json", copied, "manifest", "demo", "Submission manifest", True, "generated")
@@ -211,6 +231,10 @@ def _load_all(root: Path) -> dict[str, Any]:
         "external_generation_audit": j("artifacts/external_generation_audit.json") if (root / "artifacts/external_generation_audit.json").is_file() else {},
         "ai_contribution_manifest": j("artifacts/ai_contribution_manifest.json") if (root / "artifacts/ai_contribution_manifest.json").is_file() else {},
         "ollama_model_output": j("artifacts/ollama_model_output.json") if (root / "artifacts/ollama_model_output.json").is_file() else {},
+        "geometry_extraction": j("artifacts/geometry_extraction.json") if (root / "artifacts/geometry_extraction.json").is_file() else {},
+        "geometry_validation": j("artifacts/geometry_validation.json") if (root / "artifacts/geometry_validation.json").is_file() else {},
+        "geometry_linkage_report": j("artifacts/geometry_linkage_report.json") if (root / "artifacts/geometry_linkage_report.json").is_file() else {},
+        "geometry_scene": j("artifacts/geometry_scene.json") if (root / "artifacts/geometry_scene.json").is_file() else {},
         "approved_asot": j("artifacts/asot_with_approved_behaviors.json"),
         "simulation_inputs": j("artifacts/simulation_inputs.json"),
         "simulation_data": j("artifacts/simulation_data.json"),
@@ -249,6 +273,21 @@ def _validate_consistency(data: dict[str, Any]) -> None:
     for fidelity, status in data["simulation_data"].get("simulation_status", {}).items():
         if not status.get("mission_completed") or status.get("scenario_feasibility_status") != "pass" or float(status.get("battery_reserve_at_landing_percent", 0.0)) <= 0.0:
             raise DemoPackageError(f"{fidelity} simulation did not complete with positive reserve")
+    if data.get("geometry_validation") and not data["geometry_validation"].get("valid", False):
+        raise DemoPackageError("geometry validation is not valid")
+
+
+def _copy_source_geometry(source_zip: Path, root: Path, copied: list[dict[str, Any]]) -> None:
+    try:
+        with zipfile.ZipFile(source_zip, "r") as archive:
+            if "geometry/demo_uas.stl" not in archive.namelist():
+                return
+            target = root / "artifacts" / "source_geometry" / "demo_uas.stl"
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(archive.read("geometry/demo_uas.stl"))
+            _append_manifest(target, copied, "artifact", "geometry", "Source STL geometry", True, "source-derived")
+    except zipfile.BadZipFile as exc:
+        raise DemoPackageError("engineering package is not a valid ZIP file") from exc
 
 
 def _write_traceability_viewer(root: Path, data: dict[str, Any], rows: list[dict[str, Any]]) -> None:
@@ -386,17 +425,22 @@ def _reports(data: dict[str, Any], cli_version: str, test_summary: str, ai: dict
     req = sim["requirements_evaluation"]
     general_limitations = _general_limitations_text(ai)
     ai_limitation_note = _ai_limitations_report_text(ai)
+    geometry = _geometry_summary(data)
     readme = f"""# DE2Sim Submission Demo
 
 Open `demo_dashboard.html` directly or run `Launch_DE2Sim_Demo.bat` on Windows.
 
-This package is self-contained and uses relative links only. It demonstrates readable-to-runnable engineering flow through ingestion, parsing, ASOT, provenance, behavior approval, simulation, and requirement evidence.
+This package is self-contained and uses relative links only. It demonstrates readable-to-runnable engineering flow through ingestion, parsing, CAD geometry transformation, ASOT, provenance, behavior approval, simulation, and requirement evidence.
 """
     tech = f"""# Technical Summary
 
 DE2Sim addresses the gap between readable engineering artifacts and runnable simulation evidence. The architecture preserves secure ingestion, deterministic artifact parsing, ASOT generation, provenance, human-in-the-loop behavior approval, and executable low/high fidelity UAS simulation.
 
 The approved behavior is `{sim['asot_facts']['approved_behavior_id']}` with sequence `preflight -> mission_flight -> return_to_base -> landed`. The low-fidelity model is a deterministic kinematic point model. The high-fidelity model is a demonstrative point-mass model, not flight-certified aerodynamics.
+
+CAD-export geometry is represented by a standards-based STL artifact. Dimensions are explicitly parameterized and validated, geometry is linked to SysML/component and physical-model evidence through an explicit sidecar, and low/high simulation model artifacts reference the same ASOT geometry entity when present. Geometry is used for visualization only; no vendor-authoritative CAD or certified flight model is claimed.
+
+Geometry summary: {geometry}
 
 Determinism is supported through stable IDs, prompt hashes, deterministic JSON/CSV ordering, fixed ZIP timestamps, and path-independent package links. Security controls include local standalone HTML, no external resources, no dynamic code evaluation, and no secret packaging.
 
@@ -409,6 +453,8 @@ Evidence: `artifacts/asot_with_approved_behaviors.json`, `artifacts/simulation_d
 
 ## Innovation Merit
 Evidence: `viewers/asot_traceability_viewer.html`, `viewers/behavior_review.html`, human approval artifacts.
+
+CAD-export geometry is represented by a standards-based STL artifact. Dimensions are explicitly parameterized and validated. Geometry is linked to SysML/component and physical-model evidence through an explicit sidecar. Low- and high-fidelity simulation models share one ASOT geometry entity when present. Geometry is used for visualization only; no vendor-authoritative CAD or certified flight model is claimed.
 
 ## Maturity
 Evidence: `manifests/submission_manifest.json`, `manifests/reproducibility_report.json`, deterministic ZIP packaging.
@@ -424,12 +470,13 @@ Evidence: traceability reports, requirement evaluation, and clear limitations.
 1. Problem: engineering data is readable but not immediately runnable.
 2. Engineering ZIP: open `source_package/`.
 3. Traceability: open `viewers/asot_traceability_viewer.html`.
-4. Behavior approval: open `viewers/behavior_review.html`.
-5. Simulation playback: open `viewers/simulation_viewer.html`.
-6. Compare fidelities: show low/high landing reserves and timing.
-7. Requirement evidence: open `artifacts/requirements_evaluation.json`.
-8. Transition value: show `reports/challenge_alignment.md`.
-9. Limitations: state no flight certification, no Godot, and {ai_limitation_note}.
+4. CAD geometry: open `viewers/geometry_viewer.html` when present and state it is a demonstration STL, not vendor-authoritative CAD.
+5. Behavior approval: open `viewers/behavior_review.html`.
+6. Simulation playback: open `viewers/simulation_viewer.html`.
+7. Compare fidelities: show low/high landing reserves and timing.
+8. Requirement evidence: open `artifacts/requirements_evaluation.json`.
+9. Transition value: show `reports/challenge_alignment.md`.
+10. Limitations: state no flight certification, no Godot, no aerodynamic derivation from geometry, and {ai_limitation_note}.
 """
     return {
         "README_DEMO.md": readme,
@@ -461,6 +508,14 @@ def _known_limitations(ai: dict[str, Any]) -> list[str]:
         "no flight certification",
         "no authoritative vehicle validation",
         "no Godot export",
+        "demonstration STL mesh rather than native STEP/BREP CAD",
+        "not vendor-authoritative geometry",
+        "no articulation",
+        "no material model",
+        "no mass-property extraction",
+        "no aerodynamic derivation",
+        "no collision model",
+        "browser WebGL viewer is a visualization, not a CAD editor",
     ]
     if ai.get("evidence_status") == "confirmed_local_generation":
         return base + [
@@ -493,6 +548,7 @@ def _ai_limitations_report_text(ai: dict[str, Any]) -> str:
 def _write_evidence_matrix(path: Path) -> None:
     rows = [
         ["Technical Feasibility", "Pipeline produces runnable simulation evidence", "artifacts/simulation_data.json", "simulation_status", "JSON inspection", "Demonstrative point-mass models only"],
+        ["Technical Feasibility", "Standards-based CAD-export geometry is ingested, validated, linked, and rendered", "viewers/geometry_viewer.html", "geometry_scene.json", "Open local viewer", "Demonstration STL is not vendor authoritative"],
         ["Innovation Merit", "Traceability connects source evidence to runnable behavior", "viewers/asot_traceability_viewer.html", "graph and source evidence", "Open local viewer", "Field-level provenance is limited"],
         ["Maturity", "Package is reproducible and hashed", "manifests/submission_manifest.json", "sha256", "Hash verification", "No external deployment"],
         ["Speed to Delivery", "Local launch requires no Python", "Launch_DE2Sim_Demo.bat", "%~dp0 launcher", "Run batch file", "Windows launcher only"],
@@ -519,6 +575,7 @@ def _dashboard(data: dict[str, Any], ai: dict[str, Any]) -> str:
         {},
     )
     coverage = data["traceability_report"].get("coverage_summary", {}) if isinstance(data["traceability_report"].get("coverage_summary"), dict) else {}
+    geometry_card = _geometry_card(data)
     dash = {
         "title": sim["asot_facts"]["title"],
         "approved_behavior_id": sim["asot_facts"]["approved_behavior_id"],
@@ -545,6 +602,7 @@ def _dashboard(data: dict[str, Any], ai: dict[str, Any]) -> str:
         },
         "general_limitations": _general_limitations_text(ai),
         "known_limitations": _known_limitations(ai),
+        "geometry": geometry_card,
         "requirement_summary": _requirement_summary(sim["requirements_evaluation"]),
         "ai": ai,
         "external_ai_status": {
@@ -567,7 +625,14 @@ def _dashboard(data: dict[str, Any], ai: dict[str, Any]) -> str:
             "repair_succeeded": ai.get("repair_succeeded", False),
             "human_approval_status": ai.get("human_approval_status", False),
         },
-        "links": [
+        "links": _artifact_links(geometry_card),
+    }
+    text = json.dumps(dash, sort_keys=True, ensure_ascii=False).replace("</", "<\\/")
+    return _HTML.replace("__DASHBOARD_DATA__", text)
+
+
+def _artifact_links(geometry_card: dict[str, Any]) -> list[list[str]]:
+    links = [
             ["ASOT Traceability Viewer", "viewers/asot_traceability_viewer.html"],
             ["Behavior Review Viewer", "viewers/behavior_review.html"],
             ["Simulation Viewer", "viewers/simulation_viewer.html"],
@@ -576,10 +641,120 @@ def _dashboard(data: dict[str, Any], ai: dict[str, Any]) -> str:
             ["Evidence Matrix", "reports/evidence_matrix.csv"],
             ["Demo Script", "reports/demo_script.md"],
             ["Submission Manifest", "manifests/submission_manifest.json"],
-        ],
+    ]
+    if geometry_card.get("available"):
+        links.insert(1, ["Geometry Viewer", "viewers/geometry_viewer.html"])
+        links.insert(2, ["Geometry Integration Summary", "reports/geometry_integration_summary.md"])
+    return links
+
+
+def _geometry_summary(data: dict[str, Any]) -> str:
+    card = _geometry_card(data)
+    if not card.get("available"):
+        return "No Phase 6C geometry artifact was packaged."
+    return (
+        f"{card['source_format']} {card['dimensions']} {card['unit']}; "
+        f"validation {card['validation_status']}; ASOT geometry {card['geometry_id']}; "
+        "visualization only and not vendor-authoritative."
+    )
+
+
+def _geometry_integration_summary(data: dict[str, Any]) -> str:
+    extraction = data.get("geometry_extraction") if isinstance(data.get("geometry_extraction"), dict) else {}
+    validation = data.get("geometry_validation") if isinstance(data.get("geometry_validation"), dict) else {}
+    linkage = data.get("geometry_linkage_report") if isinstance(data.get("geometry_linkage_report"), dict) else {}
+    scene = data.get("geometry_scene") if isinstance(data.get("geometry_scene"), dict) else {}
+    geometry = extraction.get("geometry") if isinstance(extraction.get("geometry"), dict) else {}
+    source_linkage = extraction.get("linkage") if isinstance(extraction.get("linkage"), dict) else {}
+    dims = geometry.get("dimensions") if isinstance(geometry.get("dimensions"), dict) else {}
+    bb_min = geometry.get("bounding_box_min") if isinstance(geometry.get("bounding_box_min"), dict) else {}
+    bb_max = geometry.get("bounding_box_max") if isinstance(geometry.get("bounding_box_max"), dict) else {}
+    tolerances = validation.get("tolerances") if isinstance(validation.get("tolerances"), dict) else extraction.get("tolerances") if isinstance(extraction.get("tolerances"), dict) else {}
+    linked_parameters = linkage.get("linked_parameter_ids") if isinstance(linkage.get("linked_parameter_ids"), dict) else {}
+    limitations = scene.get("limitations") if isinstance(scene.get("limitations"), list) else geometry.get("limitations") if isinstance(geometry.get("limitations"), list) else _known_limitations({})
+    provenance_ids = linkage.get("source_provenance_ids") if isinstance(linkage.get("source_provenance_ids"), list) else scene.get("provenance_ids") if isinstance(scene.get("provenance_ids"), list) else []
+    geometry_flags = _simulation_geometry_flags(data, extraction.get("geometry_id", ""))
+    lines = [
+        "# Geometry Integration Summary",
+        "",
+        f"- Geometry stable ID: `{_text(extraction.get('geometry_id'))}`",
+        f"- Source path: `{_text(geometry.get('source_path'))}`",
+        f"- Source SHA-256: `{_text(geometry.get('source_sha256'))}`",
+        f"- Source format: `{_text(geometry.get('source_format'))}`",
+        f"- Source classification: `{_text(source_linkage.get('source_classification'))}`",
+        f"- Authoritativeness: `{_text(source_linkage.get('authoritativeness'))}`",
+        f"- Facet count: {geometry.get('facet_count', '')}",
+        f"- Vertex count: {geometry.get('vertex_count', '')}",
+        f"- Unique vertex count: {geometry.get('unique_vertex_count', '')}",
+        f"- Bounding-box minimum: x={bb_min.get('x')}, y={bb_min.get('y')}, z={bb_min.get('z')}",
+        f"- Bounding-box maximum: x={bb_max.get('x')}, y={bb_max.get('y')}, z={bb_max.get('z')}",
+        f"- Dimensions and unit: {dims.get('x')} x {dims.get('y')} x {dims.get('z')} {_text(geometry.get('unit'))}",
+        f"- Linked component IDs: {_format_list([linkage.get('linked_component_id')])}",
+        f"- Linked physical-model IDs: {_format_list([linkage.get('linked_physical_model_id')])}",
+        f"- Linked parameter IDs: {_format_list([linked_parameters.get(axis) for axis in ('x', 'y', 'z')])}",
+        f"- Dimensional validation status: `{_text(validation.get('validation_status'))}`",
+        f"- Absolute validation tolerance: {tolerances.get('absolute', '')}",
+        f"- Relative validation tolerance: {tolerances.get('relative', '')}",
+        f"- Provenance IDs: {_format_list(provenance_ids)}",
+        f"- geometry_used_for_visualization: {str(geometry_flags['geometry_used_for_visualization']).lower()}",
+        f"- geometry_used_for_flight_dynamics: {str(geometry_flags['geometry_used_for_flight_dynamics']).lower()}",
+        "",
+        "## Known Limitations",
+        "",
+    ]
+    lines.extend(f"- {_text(item)}" for item in limitations if _text(item))
+    return "\n".join(lines) + "\n"
+
+
+def _geometry_card(data: dict[str, Any]) -> dict[str, Any]:
+    extraction = data.get("geometry_extraction") if isinstance(data.get("geometry_extraction"), dict) else {}
+    validation = data.get("geometry_validation") if isinstance(data.get("geometry_validation"), dict) else {}
+    linkage = data.get("geometry_linkage_report") if isinstance(data.get("geometry_linkage_report"), dict) else {}
+    geometry = extraction.get("geometry") if isinstance(extraction.get("geometry"), dict) else {}
+    if not geometry:
+        return {"available": False}
+    dims = geometry.get("dimensions") if isinstance(geometry.get("dimensions"), dict) else {}
+    return {
+        "available": True,
+        "source_format": "STL",
+        "source_classification": extraction.get("linkage", {}).get("source_classification", "") if isinstance(extraction.get("linkage"), dict) else "",
+        "authoritativeness": extraction.get("linkage", {}).get("authoritativeness", "") if isinstance(extraction.get("linkage"), dict) else "",
+        "facet_count": geometry.get("facet_count", 0),
+        "dimensions": f"{dims.get('x')} x {dims.get('y')} x {dims.get('z')}",
+        "unit": geometry.get("unit", ""),
+        "validation_status": "passed" if validation.get("valid") else "failed",
+        "geometry_id": extraction.get("geometry_id", ""),
+        "component_id": linkage.get("linked_component_id", ""),
+        "physical_model_id": linkage.get("linked_physical_model_id", ""),
+        "source_hash": geometry.get("source_sha256", ""),
+        "viewer": "viewers/geometry_viewer.html",
     }
-    text = json.dumps(dash, sort_keys=True, ensure_ascii=False).replace("</", "<\\/")
-    return _HTML.replace("__DASHBOARD_DATA__", text)
+
+
+def _simulation_geometry_flags(data: dict[str, Any], geometry_id: str) -> dict[str, bool]:
+    default = {"geometry_used_for_visualization": True, "geometry_used_for_flight_dynamics": False}
+    candidates = [
+        data.get("simulation_inputs") if isinstance(data.get("simulation_inputs"), dict) else {},
+        data.get("simulation_data", {}).get("simulation_model", {}) if isinstance(data.get("simulation_data"), dict) and isinstance(data.get("simulation_data", {}).get("simulation_model"), dict) else {},
+    ]
+    for candidate in candidates:
+        if candidate.get("geometry_id") == geometry_id:
+            return {
+                "geometry_used_for_visualization": bool(candidate.get("geometry_used_for_visualization", True)),
+                "geometry_used_for_flight_dynamics": bool(candidate.get("geometry_used_for_flight_dynamics", False)),
+            }
+    return default
+
+
+def _format_list(values: Any) -> str:
+    if not isinstance(values, list):
+        values = [values]
+    cleaned = sorted({_text(item) for item in values if _text(item)})
+    return ", ".join(f"`{item}`" for item in cleaned) if cleaned else "`not available`"
+
+
+def _text(value: Any) -> str:
+    return "" if value is None else str(value).strip()
 
 
 def _requirement_summary(requirements: dict[str, Any]) -> list[dict[str, Any]]:
@@ -665,6 +840,9 @@ def _verify_links(root: Path) -> None:
         "reports/evidence_matrix.csv",
         "reports/demo_script.md",
     ]
+    if (root / "viewers" / "geometry_viewer.html").is_file():
+        links.append("viewers/geometry_viewer.html")
+        links.append("reports/geometry_integration_summary.md")
     for rel in links:
         target = (root / rel).resolve()
         if not str(target).startswith(str(root.resolve())) or not target.is_file():
@@ -723,7 +901,7 @@ _HTML = """<!doctype html>
 <body>
 <header><h1>DBbun / DE2Sim</h1><div class="tag">readable -&gt; runnable integrated demonstration package</div></header>
 <main class="wrap">
-<section><h2>Eight-Stage Pipeline</h2><div class="pipeline" id="pipeline"></div></section>
+<section><h2>Nine-Stage Pipeline</h2><div class="pipeline" id="pipeline"></div></section>
 <section><h2>Status Cards</h2><div class="grid" id="cards"></div></section>
 <section><h2>Open Artifacts</h2><div class="links" id="links"></div></section>
 <section class="card"><h2>Limitations</h2><p id="general-limitations"></p></section>
@@ -734,13 +912,14 @@ _HTML = """<!doctype html>
 const data=JSON.parse(document.getElementById("dashboard-data").textContent);
 function txt(el,v){el.textContent=v==null?"":String(v)}
 function add(tag,parent,cls){const el=document.createElement(tag);if(cls)el.className=cls;parent.appendChild(el);return el}
-["Engineering Package","Parsed Artifacts","ASOT","Provenance and Traceability","Behavior Proposal","Human Approval","Executable Simulation","Requirement Evidence"].forEach(s=>txt(add("div",document.getElementById("pipeline"),"stage"),s));
+["Engineering Package","Parsed Artifacts","CAD Geometry Transformation","ASOT","Provenance and Traceability","Behavior Proposal","Human Approval","Executable Simulation","Requirement Evidence"].forEach(s=>txt(add("div",document.getElementById("pipeline"),"stage"),s));
 const cards=document.getElementById("cards");
 function card(title,body,cls){const c=add("div",cards,"card");txt(add("h2",c),title);const p=add("div",c,"card-body "+(cls||""));txt(p,body);return c}
 txt(document.getElementById("general-limitations"),data.general_limitations);
 card("Package Status","Self-contained local package with relative links only.","ok");
 card("ASOT Validation",(data.asot_validation.passed?"PASSED":"FAILED")+"\\nErrors: "+data.asot_validation.error_count+"\\nWarnings: "+data.asot_validation.warning_count+"\\nArtifact: "+data.asot_validation.artifact,data.asot_validation.passed?"ok":"bad");
 card("Provenance Coverage","Coverage: "+data.provenance.coverage_percentage+"%\\nProvenance: "+data.provenance.provenance_manifest+"\\nTraceability: "+data.provenance.traceability_report,"ok");
+if(data.geometry&&data.geometry.available){card("CAD/Geometry Integration","source format: "+data.geometry.source_format+"\\nsource classification: "+data.geometry.source_classification+"\\nauthoritativeness: "+data.geometry.authoritativeness+"\\nfacet count: "+data.geometry.facet_count+"\\ndimensions: "+data.geometry.dimensions+"\\nunits: "+data.geometry.unit+"\\nparametric dimension validation: "+data.geometry.validation_status+"\\nlinked ASOT geometry ID: "+data.geometry.geometry_id+"\\nlinked component ID: "+data.geometry.component_id+"\\nlinked physical-model ID: "+data.geometry.physical_model_id+"\\nsource hash: "+data.geometry.source_hash+"\\ngeometry viewer link: "+data.geometry.viewer,"ok");}
 card("Approved Behavior",data.approved_behavior_id+"\\n"+data.sequence,"ok");
 card("Human Approval","Approved proposal ID: "+(data.human_approval.approved_proposal_id||"not available")+"\\nApproved behavior stable ID: "+data.human_approval.approved_behavior_id+"\\nApproval status: "+data.human_approval.approval_status+"\\nDecision timestamp: "+(data.human_approval.decision_timestamp||"not available"),"ok");
 card("Low-Fidelity Result","mission completed: "+data.status.low.mission_completed+"\\nreserve: "+data.status.low.battery_reserve_at_landing_percent+"%","ok");

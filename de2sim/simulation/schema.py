@@ -70,6 +70,7 @@ class SimulationASOTFacts:
     battery_capacity_parameter_id: str
     max_speed_parameter_id: str
     provenance_ids: tuple[str, ...] = field(default_factory=tuple)
+    geometry: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -102,4 +103,5 @@ class SimulationASOTFacts:
                 "max_speed": self.max_speed_parameter_id,
             },
             "provenance_ids": list(self.provenance_ids),
+            "geometry": self.geometry,
         }

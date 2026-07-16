@@ -85,7 +85,9 @@ def _write_outputs(output: Path, run_id: str, facts: Any, scenario: dict[str, An
         "simulation_data": output / "simulation_data.json",
         "simulation_viewer": output / "simulation_viewer.html",
     }
-    _write_json({"simulation_run_id": run_id, "asot_facts": facts.to_dict(), "scenario": scenario}, paths["simulation_inputs"])
+    inputs = {"simulation_run_id": run_id, "asot_facts": facts.to_dict(), "scenario": scenario}
+    inputs.update(facts.geometry)
+    _write_json(inputs, paths["simulation_inputs"])
     _write_json(package["simulation_model"], paths["simulation_model"])
     _write_csv(low["telemetry"], paths["telemetry_low"])
     _write_csv(high["telemetry"], paths["telemetry_high"])
@@ -124,6 +126,7 @@ def _simulation_model(facts: Any, scenario: dict[str, Any]) -> dict[str, Any]:
             "battery_capacity_wh": facts.battery_capacity_wh,
             "scenario_id": scenario["scenario_id"]["value"],
         },
+        **facts.geometry,
         "security": ["fixed simulation logic only", "no eval", "no exec", "no arbitrary source equation evaluation"],
         "terminal_conditions": ["landed", "battery_depleted_before_landing"],
     }
