@@ -1,5 +1,35 @@
 # DE2Sim Architecture
 
+## Phase 2B Scope
+
+Phase 2B builds and validates an ASOT from the Phase 1 engineering-package
+outputs. It remains dependency-free and uses only the Python standard library.
+The legacy DBbun content-to-simulator script remains unchanged.
+
+Phase 2B adds:
+
+- `de2sim/asot/builder.py`
+- `--build-asot` on the Challenge II CLI
+- `asot.json`
+- `asot_summary.md`
+- `asot_validation.json`
+- `docs/ASOT_BUILD_MAPPING.md`
+
+`--build-asot` automatically performs secure ZIP ingestion, manifest writing,
+structured artifact parsing, parsed artifact writing, ASOT construction, and
+ASOT validation:
+
+```text
+python -m de2sim.cli.challenge_pipeline --engineering-package package.zip --output out --build-asot
+```
+
+The command prints the generated paths for `package_manifest.json`,
+`parsed_artifacts.json`, `asot.json` or `asot_invalid.json`,
+`asot_summary.md`, and `asot_validation.json`.
+
+Phase 2B does not implement formal Phase 3 provenance, AI-generated behaviors,
+simulation generation, Godot export, packaging, deployment, or CAD parsing.
+
 ## Phase 2A Scope
 
 Phase 2A adds the versioned Authoritative Source of Truth (ASOT) schema,
@@ -48,11 +78,14 @@ de2sim/
     sysml_v2_reader.py
   asot/
     __init__.py
+    builder.py
     schema.py
     io.py
     validators.py
 tests/
   __init__.py
+  test_asot_builder.py
+  test_asot_cli.py
   test_asot_io.py
   test_asot_schema.py
   test_asot_validation.py
@@ -150,11 +183,34 @@ invalid ownership, and invalid behavior approval status.
 
 See `docs/ASOT_SCHEMA.md` for field-level schema details.
 
+## Phase 2B Behavior
+
+Running the CLI with `--build-asot` performs Phase 1A ingestion and Phase 1B
+artifact parsing even when `--parse-artifacts` is not supplied. Existing
+`--parse-artifacts` behavior is preserved.
+
+The ASOT builder maps only explicit source evidence:
+
+- requirements from parsed requirement records with text
+- parameters from parsed parameter records
+- components from SysML `part`, `part def`, and `package`
+- interfaces from SysML `port`, `port def`, and `connect`
+- physical models from explicit equation records
+- behaviors from SysML `action` and `action def`
+- geometry references from package-manifest geometry entries
+- preliminary source references from file/locator/parser evidence
+
+Unresolved relationships become warnings. Missing ownership and unknown fields
+remain empty instead of being inferred.
+
+If ASOT validation reports errors, the CLI writes `asot_invalid.json` and
+`asot_validation.json`, then returns a controlled nonzero exit code. Validation
+warnings still permit `asot.json`.
+
 ## Preserved Boundaries
 
-Phase 1B intentionally does not implement:
+Phase 2B intentionally does not implement:
 
-- ASOT record creation from parsed artifacts
 - AI behavior generation
 - simulation generation
 - Godot export
@@ -162,6 +218,7 @@ Phase 1B intentionally does not implement:
 - deployment
 - full SysML v2 semantic validation
 - PDF, DOCX, XLSX, or binary CAD parsing
+- formal Phase 3 provenance hashing or detailed lineage
 
 Future phases will add those capabilities under `de2sim/` while keeping the
 legacy DBbun CLI operational. Unsupported files remain listed in the manifest

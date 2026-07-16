@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 from typing import Sequence
 
+from de2sim.asot.builder import ASOTBuildError, build_asot_from_files, load_json, write_asot_outputs
 from de2sim.ingest.artifact_parser import ArtifactParsingError, parse_artifacts_from_manifest
 from de2sim.ingest.package_reader import (
     PackageValidationError,
@@ -19,7 +20,7 @@ _PHASE0_MESSAGE = (
     "DE2Sim Phase 0 scaffold is installed, but engineering-package ingestion "
     "is not implemented yet."
 )
-_CLI_VERSION = "0.1.1-phase1b"
+_CLI_VERSION = "0.2.0-phase2b"
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -47,6 +48,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--parse-artifacts",
         action="store_true",
         help="After Phase 1A ingestion, parse supported structured artifacts and write parsed_artifacts.json.",
+    )
+    parser.add_argument(
+        "--build-asot",
+        action="store_true",
+        help="Run ingestion, artifact parsing, ASOT construction, and ASOT validation.",
     )
     return parser
 
@@ -92,13 +98,29 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 2
 
     print(manifest_path)
-    if args.parse_artifacts:
+    if args.parse_artifacts or args.build_asot:
         try:
             parsed_path = parse_artifacts_from_manifest(manifest_path)
         except ArtifactParsingError as exc:
             print(f"error: {exc}", file=sys.stderr)
             return 2
         print(parsed_path)
+    else:
+        return 0
+
+    if args.build_asot:
+        try:
+            parsed = load_json(parsed_path, "parsed_artifacts")
+            document = build_asot_from_files(manifest_path, parsed_path)
+            outputs = write_asot_outputs(document, Path(args.output), parsed)
+        except ASOTBuildError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 2
+        print(outputs["asot"])
+        print(outputs["summary"])
+        print(outputs["validation"])
+        if outputs["asot"].name == "asot_invalid.json":
+            return 4
     return 0
 
 
