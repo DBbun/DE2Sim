@@ -45,6 +45,8 @@ safe hover tooltip, and entity details panel.
 The three-panel layout gives the navigation panel roughly 15% of the width,
 the graph roughly 60%, and the details panel roughly 25% on common desktop
 viewports. Side panels scroll independently while the graph remains fixed.
+The details and source evidence panels use a stable two-column key/value grid;
+long IDs, source paths, hashes, and evidence values wrap instead of overlapping.
 
 ## Navigation and Modes
 
@@ -59,8 +61,14 @@ and edges. Existing search, precision filtering, warning filtering, and type
 filters are preserved.
 
 The traceability metric is labeled explicitly as `Traceability coverage for
-this processed package`; it is not presented as a general Challenge II
+this processed package`; it appears once as a compact navigation-panel heading,
+with concise metric rows such as `Coverage`, `Precise`, `Whole-file`,
+`Unresolved`, and `Not provided`. It is not presented as a general Challenge II
 compliance claim.
+
+Selecting a visible graph node drives both the SVG highlight and the Entity
+Details panel from the same visible node resolution, so the highlighted entity
+and rendered stable ID stay aligned.
 
 ## Viewer Data
 

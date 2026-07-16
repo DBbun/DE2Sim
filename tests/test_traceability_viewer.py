@@ -166,12 +166,22 @@ class TraceabilityViewerTests(unittest.TestCase):
             "Show traceability",
             "Graph legend",
             "Traceability coverage for this processed package",
+            "Coverage",
+            "Precise",
+            "Whole-file",
+            "Not provided",
             "No source evidence available",
         ):
             self.assertIn(text, html)
+        self.assertEqual(html.count("Traceability coverage for this processed package"), 1)
+        self.assertNotIn("Traceability coverage for this processed package \"+data.metrics.traceability_percentage", html)
 
         for css in (
             "grid-template-columns:minmax(190px,15%) minmax(640px,60%) minmax(320px,25%)",
+            "grid-template-columns:minmax(96px,32%) minmax(0,1fr)",
+            "column-gap:14px",
+            ".kv>*{min-width:0}",
+            ".trace-heading",
             ".node-type-component",
             ".node-type-requirement",
             ".node-type-interface",
@@ -187,10 +197,12 @@ class TraceabilityViewerTests(unittest.TestCase):
             ".tooltip",
             "font-size:15px",
             "overflow-wrap:anywhere",
+            "white-space:pre-wrap",
         ):
             self.assertIn(css, html)
 
         for script in (
+            "function selectedNode(graph)",
             "function fitGraph()",
             "function graphBounds(nodes)",
             "function addShape(group,node)",
@@ -210,6 +222,17 @@ class TraceabilityViewerTests(unittest.TestCase):
             'txt(ps,"Provenance records")',
         ):
             self.assertIn(script, html)
+
+    def test_selected_graph_node_and_details_share_visible_entity_selection(self) -> None:
+        asot, provenance, report = self.build_bundle()
+        html = render_viewer_html(build_viewer_data(asot, provenance, report))
+
+        self.assertIn("state.selected=n.node_id;renderGraph(false);renderDetails()", html)
+        self.assertIn("const selectedDetails=selectedNode(graph)", html)
+        self.assertIn("const selectedNodeId=selectedDetails?selectedDetails.node_id:null", html)
+        self.assertIn('n.node_id===selectedNodeId?" selected":"")', html)
+        self.assertIn("function renderDetails(){const node=selectedNode();", html)
+        self.assertNotIn("data.nodes.find(n=>n.node_id===state.selected)||visibleGraph().nodes[0]", html)
 
     def test_source_text_escaping_truncation_and_no_unrelated_absolute_paths(self) -> None:
         asot, provenance, report = self.build_bundle()
