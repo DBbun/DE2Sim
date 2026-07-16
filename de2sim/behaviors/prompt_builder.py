@@ -32,18 +32,48 @@ REQUIRED_RESPONSE_SCHEMA = {
 }
 
 
-def build_behavior_prompt(asot: dict[str, Any]) -> dict[str, Any]:
+def build_behavior_prompt(asot: dict[str, Any], external_generation_purpose: str = "") -> dict[str, Any]:
     """Return provider-neutral prompt data containing only relevant ASOT evidence."""
     prompt = {
         "task": "Propose candidate state-machine behaviors for human review only.",
+        "external_generation_purpose": external_generation_purpose,
         "safety_instructions": [
             "Do not invent unsupported numerical values or thresholds.",
             "Use only component IDs, requirement IDs, parameter IDs, physical model IDs, and provenance IDs present in this prompt.",
+            "Use authoritative ASOT evidence only.",
+            "Do not invent ownership, parameters, requirements, physical models, source claims, or provenance claims.",
             "Do not generate Python, GDScript, shell commands, or executable code.",
             "Do not execute or evaluate source content, equations, or proposed behaviors.",
             "Explicitly list assumptions and risks for every proposal.",
             "Return JSON that matches the required_response_schema.",
         ],
+        "required_uas_behavior": {
+            "proposal_count": 1,
+            "name": "Low Battery Return-to-Base",
+            "states": ["preflight", "mission_flight", "return_to_base", "landed"],
+            "transition_sequence": [
+                {"from": "preflight", "to": "mission_flight"},
+                {"from": "mission_flight", "to": "return_to_base"},
+                {"from": "return_to_base", "to": "landed"},
+            ],
+            "required_symbolic_guard": "battery_state <= battery_threshold",
+            "required_evidence": [
+                "source-derived ReturnToBase behavior",
+                "Low Battery Return requirement",
+                "Maximum Speed requirement",
+                "battery_threshold parameter",
+                "max_speed parameter",
+                "battery_capacity parameter",
+                "relevant provenance IDs",
+            ],
+            "allowed_improvements": [
+                "descriptions",
+                "actions",
+                "risks",
+                "assumptions",
+                "rationale",
+            ],
+        },
         "components": _select(asot, "components", ["stable_id", "name", "description", "component_type", "source_references"]),
         "requirements": _select(asot, "requirements", ["stable_id", "requirement_id", "name", "text", "priority", "source_references"]),
         "parameters": _select(asot, "parameters", ["stable_id", "name", "description", "value", "unit", "minimum", "maximum", "symbolic_expression", "owning_component_id", "source_references"]),

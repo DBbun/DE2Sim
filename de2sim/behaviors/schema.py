@@ -38,6 +38,25 @@ class BehaviorProposal:
     validation_warnings: list[str] = field(default_factory=list)
     approval_status: str = "proposed"
     generated_by: str = ""
+    response_hash: str = ""
+    request_hash: str = ""
+    actual_external_api_call_occurred: bool = False
+    actual_local_model_inference_occurred: bool = False
+    evidence_status: str = ""
+    local_endpoint: str = ""
+    generation_mode: str = ""
+    enrichment_hash: str = ""
+    enrichment_completeness: str = ""
+    generated_field_count: int = 0
+    generated_character_count: int = 0
+    generated_json_paths: list[str] = field(default_factory=list)
+    omitted_or_empty_json_paths: list[str] = field(default_factory=list)
+    deterministic_structure_json_paths: list[str] = field(default_factory=list)
+    normalized_enrichment_hash: str = ""
+    ai_contribution_manifest: dict[str, Any] = field(default_factory=dict)
+    validated_proposal_hash: str = ""
+    local_ai_enrichment: dict[str, Any] = field(default_factory=dict)
+    limitations: list[str] = field(default_factory=list)
 
 
 def deterministic_proposal_id(payload: dict[str, Any]) -> str:
@@ -73,6 +92,25 @@ def behavior_proposal_to_dict(proposal: BehaviorProposal) -> dict[str, Any]:
         "validation_warnings": _sorted_texts(proposal.validation_warnings),
         "approval_status": proposal.approval_status,
         "generated_by": proposal.generated_by,
+        "response_hash": proposal.response_hash,
+        "request_hash": proposal.request_hash,
+        "actual_external_api_call_occurred": proposal.actual_external_api_call_occurred,
+        "actual_local_model_inference_occurred": proposal.actual_local_model_inference_occurred,
+        "evidence_status": proposal.evidence_status,
+        "local_endpoint": proposal.local_endpoint,
+        "generation_mode": proposal.generation_mode,
+        "enrichment_hash": proposal.enrichment_hash,
+        "enrichment_completeness": proposal.enrichment_completeness,
+        "generated_field_count": proposal.generated_field_count,
+        "generated_character_count": proposal.generated_character_count,
+        "generated_json_paths": _sorted_texts(proposal.generated_json_paths),
+        "omitted_or_empty_json_paths": _sorted_texts(proposal.omitted_or_empty_json_paths),
+        "deterministic_structure_json_paths": _sorted_texts(proposal.deterministic_structure_json_paths),
+        "normalized_enrichment_hash": proposal.normalized_enrichment_hash,
+        "ai_contribution_manifest": _canonical(proposal.ai_contribution_manifest),
+        "validated_proposal_hash": proposal.validated_proposal_hash,
+        "local_ai_enrichment": _canonical(proposal.local_ai_enrichment),
+        "limitations": _sorted_texts(proposal.limitations),
     }
 
 
@@ -103,6 +141,25 @@ def behavior_proposal_from_dict(data: dict[str, Any]) -> BehaviorProposal:
         validation_warnings=_list_text(data.get("validation_warnings")),
         approval_status=str(data.get("approval_status", "proposed")),
         generated_by=str(data.get("generated_by", "")),
+        response_hash=str(data.get("response_hash", "")),
+        request_hash=str(data.get("request_hash", "")),
+        actual_external_api_call_occurred=bool(data.get("actual_external_api_call_occurred", False)),
+        actual_local_model_inference_occurred=bool(data.get("actual_local_model_inference_occurred", False)),
+        evidence_status=str(data.get("evidence_status", "")),
+        local_endpoint=str(data.get("local_endpoint", "")),
+        generation_mode=str(data.get("generation_mode", "")),
+        enrichment_hash=str(data.get("enrichment_hash", "")),
+        enrichment_completeness=str(data.get("enrichment_completeness", "")),
+        generated_field_count=int(data.get("generated_field_count", 0) or 0),
+        generated_character_count=int(data.get("generated_character_count", 0) or 0),
+        generated_json_paths=_list_text(data.get("generated_json_paths")),
+        omitted_or_empty_json_paths=_list_text(data.get("omitted_or_empty_json_paths")),
+        deterministic_structure_json_paths=_list_text(data.get("deterministic_structure_json_paths")),
+        normalized_enrichment_hash=str(data.get("normalized_enrichment_hash", "")),
+        ai_contribution_manifest=dict(data.get("ai_contribution_manifest", {})) if isinstance(data.get("ai_contribution_manifest"), dict) else {},
+        validated_proposal_hash=str(data.get("validated_proposal_hash", "")),
+        local_ai_enrichment=dict(data.get("local_ai_enrichment", {})) if isinstance(data.get("local_ai_enrichment"), dict) else {},
+        limitations=_list_text(data.get("limitations")),
     )
 
 
@@ -150,8 +207,31 @@ def validate_behavior_proposal(proposal: BehaviorProposal | dict[str, Any], asot
 
 
 def _normalized_identity(payload: dict[str, Any]) -> dict[str, Any]:
-    excluded = {"proposal_id", "generated_at_utc", "validation_warnings", "approval_status"}
+    excluded = {"proposal_id", "generated_at_utc", "validation_warnings", "approval_status", "validated_proposal_hash", "ai_contribution_manifest"}
     normalized = {key: value for key, value in payload.items() if key not in excluded}
+    for optional_key in (
+        "response_hash",
+        "request_hash",
+        "actual_external_api_call_occurred",
+        "actual_local_model_inference_occurred",
+        "evidence_status",
+        "local_endpoint",
+        "generation_mode",
+        "enrichment_hash",
+        "enrichment_completeness",
+        "generated_field_count",
+        "generated_character_count",
+        "generated_json_paths",
+        "omitted_or_empty_json_paths",
+        "deterministic_structure_json_paths",
+        "normalized_enrichment_hash",
+        "ai_contribution_manifest",
+        "validated_proposal_hash",
+        "local_ai_enrichment",
+        "limitations",
+    ):
+        if not normalized.get(optional_key):
+            normalized.pop(optional_key, None)
     if not normalized.get("referenced_behavior_ids"):
         normalized.pop("referenced_behavior_ids", None)
     return _canonical(normalized)

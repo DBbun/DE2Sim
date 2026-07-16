@@ -34,6 +34,10 @@ class SimulationViewerTests(unittest.TestCase):
         self.assertIn("preflight -> mission_flight -> return_to_base -> landed", html)
         self.assertIn("demonstration_assumption", html)
         self.assertIn("not flight-certified aerodynamics", html)
+        self.assertIn("The simulation engine produces deterministic low- and high-fidelity demonstrative point-mass results.", html)
+        self.assertIn("The browser viewer replays precomputed telemetry and is packaged as part of the integrated DE2Sim demonstration. No Godot export or flight-certified model is claimed.", html)
+        self.assertNotIn("Phase 5A stops at deterministic local simulation", html)
+        self.assertNotIn("No Godot, packaging, deployment", html)
         for text in ("Simulation Status", "Mission completed", "Terminal reason", "Battery reserve at landing", "Scenario feasibility", "threshold", "current-marker", "Low path", "High path", "labelize(k)", "details"):
             self.assertIn(text, html)
         self.assertIn("source_classification", html)

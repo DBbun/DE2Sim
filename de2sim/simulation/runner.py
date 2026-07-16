@@ -206,9 +206,9 @@ def _status(output: dict[str, Any], comparison: dict[str, Any]) -> dict[str, Any
 
 def _limitations(prefix: str = "") -> list[str]:
     return [
-        prefix + "Phase 5A stops at deterministic local simulation and standalone viewer output.",
+        prefix + "The simulation engine produces deterministic low- and high-fidelity demonstrative point-mass results.",
         prefix + "High fidelity is a demonstrative point-mass model, not flight-certified aerodynamics.",
         prefix + "Scenario defaults are demonstration assumptions, not CAD, SysML, or authoritative engineering facts.",
         prefix + "The browser viewer plays back precomputed telemetry and does not recompute authoritative results.",
-        prefix + "No Godot, packaging, deployment, arbitrary equation evaluation, or generated code execution is implemented.",
+        prefix + "The browser viewer replays precomputed telemetry and is packaged as part of the integrated DE2Sim demonstration. No Godot export or flight-certified model is claimed.",
     ]

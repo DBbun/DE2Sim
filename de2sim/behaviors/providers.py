@@ -1,10 +1,15 @@
-"""Behavior proposal providers for DE2Sim Phase 4A."""
+"""Behavior proposal providers for DE2Sim behavior generation."""
 
 from __future__ import annotations
 
 import importlib
+import hashlib
 import json
 import os
+import socket
+import ssl
+from datetime import datetime, timezone
+from urllib.parse import urlparse
 import urllib.error
 import urllib.request
 from typing import Any, Protocol
@@ -13,11 +18,16 @@ from typing import Any, Protocol
 class BehaviorProviderError(Exception):
     """Controlled behavior provider failure."""
 
+    def __init__(self, message: str, metadata: dict[str, Any] | None = None) -> None:
+        super().__init__(message)
+        self.metadata = metadata or {}
+
 
 class BehaviorProvider(Protocol):
     provider_name: str
     model: str
     generated_by: str
+    last_metadata: dict[str, Any]
 
     def propose(self, prompt: dict[str, Any]) -> list[dict[str, Any]]:
         """Return raw proposal dictionaries without executing generated content."""
@@ -27,6 +37,7 @@ class OfflineTemplateProvider:
     provider_name = "offline"
     model = "deterministic-template-v1"
     generated_by = "offline_template"
+    last_metadata: dict[str, Any] = {}
 
     def propose(self, prompt: dict[str, Any]) -> list[dict[str, Any]]:
         self.model = "deterministic-template-v1"
@@ -103,20 +114,27 @@ class OfflineTemplateProvider:
 
 class OpenAIProvider:
     provider_name = "openai"
-    model = "configured-openai-model"
-    generated_by = "ai_provider"
+    model = ""
+    generated_by = "external_generative_ai"
 
-    def __init__(self, model: str = "gpt-5", client: Any | None = None, timeout_s: float = 30.0) -> None:
+    def __init__(self, model: str = "", client: Any | None = None, timeout_s: float = 30.0, max_attempts: int = 1) -> None:
         self.model = model
         self._client = client
         self.timeout_s = timeout_s
+        self.max_attempts = max(1, int(max_attempts))
+        self.last_metadata: dict[str, Any] = {}
 
     def propose(self, prompt: dict[str, Any]) -> list[dict[str, Any]]:
+        if not self.model:
+            raise BehaviorProviderError("OpenAI behavior provider requires an explicit model")
         key = os.environ.get("OPENAI_API_KEY", "")
         if not key:
             raise BehaviorProviderError("OPENAI_API_KEY is required for the OpenAI behavior provider")
         if self._client is not None:
-            return _extract_json_proposals(self._client(prompt))
+            payload = self._client(prompt)
+            response_text = payload if isinstance(payload, str) else json.dumps(payload, sort_keys=True, ensure_ascii=False)
+            self.last_metadata = _mock_metadata("openai", self.model, prompt, response_text, self.timeout_s)
+            return _extract_json_proposals(payload)
         payload = {
             "model": self.model,
             "input": [
@@ -124,32 +142,42 @@ class OpenAIProvider:
                 {"role": "user", "content": json.dumps(prompt, sort_keys=True, ensure_ascii=False)},
             ],
         }
-        response = _https_json(
+        response, metadata = _https_json(
             "https://api.openai.com/v1/responses",
             payload,
             {"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
             self.timeout_s,
+            self.max_attempts,
         )
+        self.last_metadata = metadata
         text = _openai_text(response)
+        self.last_metadata["model_output_hash"] = _sha256_text(text)
         return _extract_json_proposals(text)
 
 
 class AnthropicProvider:
     provider_name = "anthropic"
-    model = "configured-anthropic-model"
-    generated_by = "ai_provider"
+    model = ""
+    generated_by = "external_generative_ai"
 
-    def __init__(self, model: str = "claude-sonnet-4", client: Any | None = None, timeout_s: float = 30.0) -> None:
+    def __init__(self, model: str = "", client: Any | None = None, timeout_s: float = 30.0, max_attempts: int = 1) -> None:
         self.model = model
         self._client = client
         self.timeout_s = timeout_s
+        self.max_attempts = max(1, int(max_attempts))
+        self.last_metadata: dict[str, Any] = {}
 
     def propose(self, prompt: dict[str, Any]) -> list[dict[str, Any]]:
+        if not self.model:
+            raise BehaviorProviderError("Anthropic behavior provider requires an explicit model")
         key = os.environ.get("ANTHROPIC_API_KEY", "")
         if not key:
             raise BehaviorProviderError("ANTHROPIC_API_KEY is required for the Anthropic behavior provider")
         if self._client is not None:
-            return _extract_json_proposals(self._client(prompt))
+            payload = self._client(prompt)
+            response_text = payload if isinstance(payload, str) else json.dumps(payload, sort_keys=True, ensure_ascii=False)
+            self.last_metadata = _mock_metadata("anthropic", self.model, prompt, response_text, self.timeout_s)
+            return _extract_json_proposals(payload)
         payload = {
             "model": self.model,
             "max_tokens": 4096,
@@ -157,57 +185,274 @@ class AnthropicProvider:
                 {"role": "user", "content": "Return strict JSON with a top-level proposals array.\n" + json.dumps(prompt, sort_keys=True, ensure_ascii=False)}
             ],
         }
-        response = _https_json(
+        response, metadata = _https_json(
             "https://api.anthropic.com/v1/messages",
             payload,
             {"x-api-key": key, "anthropic-version": "2023-06-01", "Content-Type": "application/json"},
             self.timeout_s,
+            self.max_attempts,
         )
+        self.last_metadata = metadata
         text = _anthropic_text(response)
+        self.last_metadata["model_output_hash"] = _sha256_text(text)
         return _extract_json_proposals(text)
 
 
-def get_provider(name: str) -> BehaviorProvider:
+class OllamaProvider:
+    provider_name = "ollama"
+    generated_by = "local_generative_ai"
+    default_base_url = "http://localhost:11434"
+    deterministic_seed = 4262062
+
+    def __init__(
+        self,
+        model: str = "gemma3:4b",
+        base_url: str = default_base_url,
+        client: Any | None = None,
+        timeout_s: float = 30.0,
+        max_attempts: int = 1,
+    ) -> None:
+        self.model = model or "gemma3:4b"
+        self.base_url = _validate_loopback_ollama_base_url(base_url or self.default_base_url)
+        self._client = client
+        self.timeout_s = timeout_s
+        self.max_attempts = max(1, int(max_attempts))
+        self.last_metadata: dict[str, Any] = {}
+
+    def propose(self, prompt: dict[str, Any]) -> list[dict[str, Any]]:
+        if not self.model:
+            raise BehaviorProviderError("Ollama behavior provider requires an explicit model")
+        payload = _ollama_payload(self.model, prompt, self.deterministic_seed)
+        if self._client is not None:
+            response = self._client(payload)
+            response_text = response if isinstance(response, str) else json.dumps(response, sort_keys=True, ensure_ascii=False)
+            self.last_metadata = _mock_metadata("ollama", self.model, payload, response_text, self.timeout_s)
+            self.last_metadata.update(
+                {
+                    "generated_by": self.generated_by,
+                    "actual_local_model_inference_occurred": False,
+                    "actual_external_api_call_occurred": False,
+                    "local_endpoint": "loopback_only",
+                    "ollama_base_url": self.base_url,
+                    "generation_mode": "canonical_asot_scaffold_plus_local_ai_enrichment",
+                }
+            )
+            return [_extract_ollama_enrichment(response, self.last_metadata)]
+        response, metadata = _http_json(
+            self.base_url.rstrip("/") + "/api/generate",
+            payload,
+            {"Content-Type": "application/json"},
+            self.timeout_s,
+            self.max_attempts,
+            actual_external_api_call_occurred=False,
+        )
+        text = _ollama_text(response, metadata)
+        metadata.update(
+            {
+                "provider": "ollama",
+                "model": self.model,
+                "generated_by": self.generated_by,
+                "actual_local_model_inference_occurred": True,
+                "actual_external_api_call_occurred": False,
+                "local_endpoint": "loopback_only",
+                "ollama_base_url": self.base_url,
+                "evidence_status": "confirmed_local_generation",
+                "generation_mode": "canonical_asot_scaffold_plus_local_ai_enrichment",
+                "created_at": str(response.get("created_at", "")),
+                "done": bool(response.get("done", False)),
+                "done_reason": str(response.get("done_reason", "")),
+                "prompt_eval_count": response.get("prompt_eval_count", ""),
+                "eval_count": response.get("eval_count", ""),
+                "total_duration": response.get("total_duration", ""),
+                "model_output_hash": _sha256_text(text),
+                "original_response_hash": _sha256_text(text),
+                "repair_attempted": False,
+                "repair_succeeded": False,
+                "parsing_status": "pending",
+            }
+        )
+        self.last_metadata = metadata
+        return [self._parse_or_repair_enrichment(text, metadata)]
+
+    def _parse_or_repair_enrichment(self, text: str, metadata: dict[str, Any]) -> dict[str, Any]:
+        normalized = _normalize_model_json_text(text)
+        try:
+            result = _extract_json_object(normalized, "Ollama enrichment", "model enrichment is not valid JSON")
+            metadata["parsing_status"] = "parsed"
+            return result
+        except BehaviorProviderError:
+            metadata["parsing_status"] = "model enrichment is not valid JSON"
+            metadata["failed_model_response"] = text
+        metadata["repair_attempted"] = True
+        repair_payload = _ollama_repair_payload(self.model, text, self.deterministic_seed)
+        try:
+            repaired_response, repair_metadata = _http_json(
+                self.base_url.rstrip("/") + "/api/generate",
+                repair_payload,
+                {"Content-Type": "application/json"},
+                self.timeout_s,
+                1,
+                actual_external_api_call_occurred=False,
+            )
+            repaired_text = _ollama_text(repaired_response, repair_metadata)
+            metadata["repaired_response_hash"] = _sha256_text(repaired_text)
+            metadata["attempt_count"] = int(metadata.get("attempt_count", 1) or 1) + int(repair_metadata.get("attempt_count", 1) or 1)
+            result = _extract_json_object(_normalize_model_json_text(repaired_text), "Ollama enrichment", "local JSON repair failed")
+            metadata["repair_succeeded"] = True
+            metadata["parsing_status"] = "parsed_after_repair"
+            return result
+        except BehaviorProviderError as exc:
+            metadata["repair_succeeded"] = False
+            metadata["parsing_status"] = "local JSON repair failed"
+            raise BehaviorProviderError("local JSON repair failed", metadata) from exc
+
+
+def get_provider(
+    name: str,
+    model: str = "",
+    timeout_s: float = 30.0,
+    max_attempts: int = 1,
+    ollama_base_url: str = OllamaProvider.default_base_url,
+) -> BehaviorProvider:
     normalized = str(name or "offline").strip().lower()
     if normalized == "offline":
         return OfflineTemplateProvider()
     if normalized == "openai":
-        return OpenAIProvider()
+        return OpenAIProvider(model=model or os.environ.get("DE2SIM_OPENAI_MODEL", ""), timeout_s=timeout_s, max_attempts=max_attempts)
     if normalized == "anthropic":
-        return AnthropicProvider()
+        return AnthropicProvider(model=model or os.environ.get("DE2SIM_ANTHROPIC_MODEL", ""), timeout_s=timeout_s, max_attempts=max_attempts)
+    if normalized == "ollama":
+        return OllamaProvider(model=model or os.environ.get("DE2SIM_OLLAMA_MODEL", "gemma3:4b"), base_url=ollama_base_url, timeout_s=timeout_s, max_attempts=max_attempts)
     raise BehaviorProviderError(f"unsupported behavior AI provider: {name}")
 
 
 def _extract_json_proposals(response: Any) -> list[dict[str, Any]]:
-    if isinstance(response, dict):
-        payload = response
-    else:
-        payload = json.loads(str(response))
+    try:
+        if isinstance(response, dict):
+            payload = response
+        else:
+            payload = json.loads(str(response))
+    except json.JSONDecodeError as exc:
+        raise BehaviorProviderError("provider returned malformed JSON") from exc
     proposals = payload.get("proposals") if isinstance(payload, dict) else None
     if not isinstance(proposals, list) or not all(isinstance(item, dict) for item in proposals):
         raise BehaviorProviderError("provider response must contain a proposals array")
     return proposals
 
 
-def _https_json(url: str, payload: dict[str, Any], headers: dict[str, str], timeout_s: float) -> dict[str, Any]:
+def _https_json(url: str, payload: dict[str, Any], headers: dict[str, str], timeout_s: float, max_attempts: int) -> tuple[dict[str, Any], dict[str, Any]]:
+    return _http_json(url, payload, headers, timeout_s, max_attempts, actual_external_api_call_occurred=True)
+
+
+def _http_json(
+    url: str,
+    payload: dict[str, Any],
+    headers: dict[str, str],
+    timeout_s: float,
+    max_attempts: int,
+    actual_external_api_call_occurred: bool,
+) -> tuple[dict[str, Any], dict[str, Any]]:
     body = json.dumps(payload, sort_keys=True, ensure_ascii=False).encode("utf-8")
-    request = urllib.request.Request(url, data=body, headers=headers, method="POST")
-    try:
-        with urllib.request.urlopen(request, timeout=timeout_s) as response:
-            raw = response.read().decode("utf-8")
-    except urllib.error.HTTPError as exc:
-        raise BehaviorProviderError(f"provider HTTP error: {exc.code}") from exc
-    except urllib.error.URLError as exc:
-        raise BehaviorProviderError("provider network error") from exc
-    except TimeoutError as exc:
-        raise BehaviorProviderError("provider request timed out") from exc
+    started = _utc_now()
+    attempts = 0
+    last_exc: Exception | None = None
+    metadata: dict[str, Any] = {}
+    while attempts < max(1, int(max_attempts)):
+        attempts += 1
+        request = urllib.request.Request(url, data=body, headers=headers, method="POST")
+        try:
+            with urllib.request.urlopen(request, timeout=timeout_s) as response:
+                raw = response.read().decode("utf-8")
+                status = int(response.getcode() if hasattr(response, "getcode") and response.getcode() is not None else getattr(response, "status", 200))
+                if status < 200 or status >= 300:
+                    raise BehaviorProviderError(f"provider HTTP error: {status}")
+                received = _utc_now()
+                metadata = {
+                    "request_started_at_utc": started,
+                    "response_received_at_utc": received,
+                    "http_status": status,
+                    "provider_request_id": _safe_header(response, ("x-request-id", "request-id", "anthropic-request-id")),
+                    "request_hash": _sha256_bytes(body),
+                    "response_hash": _sha256_text(raw),
+                    "attempt_count": attempts,
+                    "timeout_seconds": timeout_s,
+                    "actual_external_api_call_occurred": actual_external_api_call_occurred,
+                }
+                break
+        except urllib.error.HTTPError as exc:
+            detail = ""
+            try:
+                detail = exc.read().decode("utf-8", errors="replace")
+            except Exception:
+                detail = ""
+            if "not found" in detail.lower() or exc.code == 404:
+                raise BehaviorProviderError(f"provider model not found or HTTP error: {exc.code}") from exc
+            raise BehaviorProviderError(f"provider HTTP error: {exc.code}") from exc
+        except TimeoutError as exc:
+            last_exc = exc
+            if attempts >= max(1, int(max_attempts)):
+                raise BehaviorProviderError("provider request timed out") from exc
+        except (urllib.error.URLError, socket.gaierror, ssl.SSLError, OSError) as exc:
+            last_exc = exc
+            if attempts >= max(1, int(max_attempts)):
+                raise BehaviorProviderError("provider network error") from exc
+    else:
+        raise BehaviorProviderError("provider network error") from last_exc
     try:
         decoded = json.loads(raw)
     except json.JSONDecodeError as exc:
-        raise BehaviorProviderError("provider returned malformed JSON") from exc
+        message = "provider returned malformed JSON" if actual_external_api_call_occurred else "malformed Ollama HTTP response"
+        raise BehaviorProviderError(message, metadata) from exc
     if not isinstance(decoded, dict):
         raise BehaviorProviderError("provider JSON response must be an object")
-    return decoded
+    return decoded, metadata
+
+
+def _mock_metadata(provider: str, model: str, prompt: dict[str, Any], response_text: str, timeout_s: float) -> dict[str, Any]:
+    body = json.dumps({"model": model, "prompt": prompt}, sort_keys=True, ensure_ascii=False).encode("utf-8")
+    return {
+        "provider": provider,
+        "model": model,
+        "request_started_at_utc": "mocked-test-only",
+        "response_received_at_utc": "mocked-test-only",
+        "http_status": 200,
+        "provider_request_id": "",
+        "request_hash": _sha256_bytes(body),
+        "response_hash": _sha256_text(response_text),
+        "attempt_count": 1,
+        "timeout_seconds": timeout_s,
+        "actual_external_api_call_occurred": False,
+        "actual_local_model_inference_occurred": False,
+        "evidence_status": "mocked_test_only",
+        "repair_attempted": False,
+        "repair_succeeded": False,
+        "parsing_status": "mocked_test_only",
+    }
+
+
+def _safe_header(response: Any, names: tuple[str, ...]) -> str:
+    headers = getattr(response, "headers", None)
+    for name in names:
+        value = ""
+        if headers is not None and hasattr(headers, "get"):
+            value = str(headers.get(name, "") or "")
+        elif hasattr(response, "getheader"):
+            value = str(response.getheader(name, "") or "")
+        if value and all(ch.isalnum() or ch in "-_." for ch in value):
+            return value[:128]
+    return ""
+
+
+def _utc_now() -> str:
+    return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+def _sha256_bytes(value: bytes) -> str:
+    return hashlib.sha256(value).hexdigest()
+
+
+def _sha256_text(value: str) -> str:
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()
 
 
 def _openai_text(response: dict[str, Any]) -> str:
@@ -232,6 +477,174 @@ def _anthropic_text(response: dict[str, Any]) -> str:
     if not texts:
         raise BehaviorProviderError("Anthropic response did not contain JSON text")
     return "\n".join(texts)
+
+
+def _ollama_payload(model: str, prompt: dict[str, Any], seed: int) -> dict[str, Any]:
+    schema = {
+        "type": "object",
+        "additionalProperties": False,
+        "required": [
+            "behavior_summary",
+            "state_descriptions",
+            "transition_rationale",
+            "state_actions",
+            "risks",
+            "assumptions",
+            "limitations",
+        ],
+        "properties": {
+            "behavior_summary": {"type": "string"},
+            "state_descriptions": {
+                "type": "object",
+                "additionalProperties": False,
+                "required": ["preflight", "mission_flight", "return_to_base", "landed"],
+                "properties": {
+                    "preflight": {"type": "string"},
+                    "mission_flight": {"type": "string"},
+                    "return_to_base": {"type": "string"},
+                    "landed": {"type": "string"},
+                },
+            },
+            "transition_rationale": {
+                "type": "object",
+                "additionalProperties": False,
+                "required": ["preflight_to_mission_flight", "mission_flight_to_return_to_base", "return_to_base_to_landed"],
+                "properties": {
+                    "preflight_to_mission_flight": {"type": "string"},
+                    "mission_flight_to_return_to_base": {"type": "string"},
+                    "return_to_base_to_landed": {"type": "string"},
+                },
+            },
+            "state_actions": {
+                "type": "object",
+                "additionalProperties": False,
+                "required": ["preflight", "mission_flight", "return_to_base", "landed"],
+                "properties": {
+                    state: {"type": "array", "items": {"type": "string"}}
+                    for state in ("preflight", "mission_flight", "return_to_base", "landed")
+                },
+            },
+            "risks": {
+                "type": "array",
+                "items": {"type": "string"},
+            },
+            "assumptions": {"type": "array", "items": {"type": "string"}},
+            "limitations": {"type": "array", "items": {"type": "string"}},
+        },
+    }
+    prompt_text = (
+        "Return strict JSON only. Generate only the requested enrichment JSON object. "
+        "All entries must be based only on the supplied ASOT evidence. "
+        "Do not introduce new numerical values. Do not invent new requirements, parameters, components, "
+        "physical models, ownership, performance values, or source claims. "
+        "Assumptions must be explicitly listed. Empty arrays are allowed when the evidence does not support additional detail. "
+        "Do not return proposal IDs, stable IDs, states, transitions, guards, provider metadata, or evidence status.\n"
+        + json.dumps(_compact_ollama_prompt(prompt), sort_keys=True, ensure_ascii=False)
+    )
+    return {
+        "model": model,
+        "prompt": prompt_text,
+        "stream": False,
+        "format": schema,
+        "options": {"temperature": 0, "seed": seed, "num_ctx": 8192, "num_predict": 2048},
+        "keep_alive": "10m",
+    }
+
+
+def _ollama_repair_payload(model: str, malformed_text: str, seed: int) -> dict[str, Any]:
+    schema = _ollama_payload(model, {}, seed)["format"]
+    prompt_text = (
+        "Repair JSON syntax only. Return only the corrected JSON object matching the exact schema. "
+        "Do not add content, values, numbers, facts, IDs, assumptions, claims, or fields. "
+        "If syntax cannot be repaired without adding content, return the closest syntactically valid object using only existing content.\n"
+        "Exact schema:\n"
+        + json.dumps(schema, sort_keys=True, ensure_ascii=False)
+        + "\nMalformed model-generated enrichment text:\n"
+        + malformed_text
+    )
+    return {
+        "model": model,
+        "prompt": prompt_text,
+        "stream": False,
+        "format": schema,
+        "options": {"temperature": 0, "seed": seed, "num_ctx": 8192, "num_predict": 2048},
+        "keep_alive": "10m",
+    }
+
+
+def _compact_ollama_prompt(prompt: dict[str, Any]) -> dict[str, Any]:
+    def text(item: dict[str, Any]) -> str:
+        return json.dumps(item, sort_keys=True).lower()
+
+    requirements = [item for item in prompt.get("requirements", []) if isinstance(item, dict)]
+    parameters = [item for item in prompt.get("parameters", []) if isinstance(item, dict)]
+    behaviors = [item for item in prompt.get("existing_source_derived_behaviors", []) if isinstance(item, dict)]
+    provenance = [item for item in prompt.get("provenance_references", []) if isinstance(item, dict)]
+    selected_requirements = [item for item in requirements if ("battery" in text(item) and "return" in text(item) and "base" in text(item)) or ("maximum" in text(item) and "speed" in text(item))]
+    selected_parameters = [item for item in parameters if ("battery" in text(item) and ("threshold" in text(item) or "capacity" in text(item))) or ("speed" in text(item) and ("max" in text(item) or "maximum" in text(item)))]
+    selected_behaviors = [item for item in behaviors if "returntobase" in text(item).replace("_", "").replace("-", "").replace(" ", "") or ("return" in text(item) and "base" in text(item))]
+    referenced = {str(ref) for item in selected_requirements + selected_parameters + selected_behaviors for ref in item.get("source_references", [])}
+    selected_provenance = [item for item in provenance if item.get("provenance_id") in referenced or any(tid in {r.get("stable_id") for r in selected_requirements + selected_parameters + selected_behaviors} for tid in item.get("target_entity_ids", []))]
+    return {
+        "task": "Enrich the ASOT-bound Low Battery Return-to-Base behavior only.",
+        "required_uas_behavior": prompt.get("required_uas_behavior", {}),
+        "requirements": selected_requirements,
+        "parameters": selected_parameters,
+        "existing_source_derived_behaviors": selected_behaviors,
+        "provenance_references": selected_provenance,
+    }
+
+
+def _extract_ollama_enrichment(response: Any, metadata: dict[str, Any]) -> dict[str, Any]:
+    if isinstance(response, dict) and "response" in response:
+        text = _ollama_text(response, metadata)
+        return _extract_json_object(_normalize_model_json_text(text), "Ollama enrichment", "model enrichment is not valid JSON")
+    if isinstance(response, dict):
+        return response
+    return _extract_json_object(_normalize_model_json_text(str(response)), "Ollama enrichment", "model enrichment is not valid JSON")
+
+
+def _extract_json_object(response: Any, label: str, malformed_message: str = "provider returned malformed JSON") -> dict[str, Any]:
+    try:
+        payload = response if isinstance(response, dict) else json.loads(str(response))
+    except json.JSONDecodeError as exc:
+        raise BehaviorProviderError(malformed_message) from exc
+    if not isinstance(payload, dict):
+        raise BehaviorProviderError(f"{label} response must be a JSON object")
+    return payload
+
+
+def _ollama_text(response: dict[str, Any], metadata: dict[str, Any]) -> str:
+    if not isinstance(response.get("response"), str):
+        metadata["parsing_status"] = "Ollama response missing response field"
+        raise BehaviorProviderError("Ollama response missing response field", metadata)
+    return response["response"]
+
+
+def _normalize_model_json_text(text: str) -> str:
+    normalized = text.lstrip("\ufeff").strip()
+    if normalized.startswith("```"):
+        lines = normalized.splitlines()
+        if lines and lines[0].strip().lower() in {"```", "```json"} and lines[-1].strip() == "```":
+            normalized = "\n".join(lines[1:-1]).strip()
+    return normalized
+
+
+def _validate_loopback_ollama_base_url(base_url: str) -> str:
+    parsed = urlparse(base_url)
+    if parsed.scheme != "http":
+        raise BehaviorProviderError("Ollama base URL must use http on a loopback host")
+    host = parsed.hostname or ""
+    if host.lower() not in {"localhost", "127.0.0.1", "::1"}:
+        raise BehaviorProviderError("Ollama base URL must use a loopback host")
+    if parsed.username or parsed.password:
+        raise BehaviorProviderError("Ollama base URL must not include credentials")
+    if "ollama.com" in base_url.lower():
+        raise BehaviorProviderError("Ollama provider must not contact ollama.com")
+    path = parsed.path.rstrip("/")
+    if path not in {"", "/"}:
+        raise BehaviorProviderError("Ollama base URL must not include a path; /api/generate is appended by DE2Sim")
+    return base_url.rstrip("/")
 
 
 def _matching_parameters(parameters: list[dict[str, Any]], component_id: str) -> list[dict[str, Any]]:

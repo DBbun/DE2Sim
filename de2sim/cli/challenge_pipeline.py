@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from pathlib import Path
 from typing import Sequence
 
 from de2sim.asot.builder import ASOTBuildError, build_asot_from_files, load_json, write_asot_outputs
 from de2sim.behaviors.approval import BehaviorApprovalError, load_decisions, write_behavior_approval_outputs
-from de2sim.behaviors.proposal_generator import BehaviorProposalError, load_behavior_proposals, write_behavior_generation_outputs
+from de2sim.behaviors.proposal_generator import BehaviorProposalError, build_external_generation_audit, load_behavior_proposals, write_behavior_generation_outputs
 from de2sim.demo import DemoPackageError, build_demo_package
 from de2sim.ingest.artifact_parser import ArtifactParsingError, parse_artifacts_from_manifest
 from de2sim.ingest.package_reader import (
@@ -27,7 +28,7 @@ _PHASE0_MESSAGE = (
     "DE2Sim Phase 0 scaffold is installed, but engineering-package ingestion "
     "is not implemented yet."
 )
-_CLI_VERSION = "0.6.0-phase6a"
+_CLI_VERSION = "0.6.5-phase6b-local"
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -78,9 +79,41 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--ai-provider",
-        choices=("offline", "openai", "anthropic"),
+        choices=("offline", "openai", "anthropic", "ollama"),
         default="offline",
         help="Behavior proposal provider. Defaults to offline deterministic templates.",
+    )
+    parser.add_argument(
+        "--ai-model",
+        metavar="MODEL",
+        default="",
+        help="Explicit OpenAI or Anthropic model for external behavior generation. May also use DE2SIM_OPENAI_MODEL or DE2SIM_ANTHROPIC_MODEL.",
+    )
+    parser.add_argument(
+        "--ollama-base-url",
+        metavar="URL",
+        default="http://localhost:11434",
+        help="Loopback-only Ollama base URL. DE2Sim appends /api/generate.",
+    )
+    parser.add_argument(
+        "--provider-timeout-seconds",
+        metavar="N",
+        type=float,
+        default=30.0,
+        help="External provider timeout in seconds.",
+    )
+    parser.add_argument(
+        "--provider-max-attempts",
+        metavar="N",
+        type=int,
+        default=1,
+        help="Maximum external provider attempts.",
+    )
+    parser.add_argument(
+        "--external-generation-purpose",
+        metavar="TEXT",
+        default="",
+        help="Purpose string embedded in the external-generation prompt.",
     )
     parser.add_argument(
         "--apply-behavior-decisions",
@@ -126,7 +159,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     if args.version:
-        print(f"DE2Sim v{_CLI_VERSION} (supersedes DE2Sim v0.5.0-phase5a; supersedes DE2Sim v0.4.1-phase4b; supersedes DE2Sim v0.3.2-phase3c; supersedes DE2Sim v0.3.1-phase3b; supersedes DE2Sim v0.3.0-phase3a; supersedes DE2Sim v0.2.0-phase2b)")
+        print(f"DE2Sim v{_CLI_VERSION} (supersedes DE2Sim v0.6.4-phase6b-local; supersedes DE2Sim v0.6.3-phase6b-local; supersedes DE2Sim v0.6.2-phase6b-local; supersedes DE2Sim v0.6.1-phase6b; supersedes DE2Sim v0.6.0-phase6a; supersedes DE2Sim v0.5.0-phase5a; supersedes DE2Sim v0.4.1-phase4b; supersedes DE2Sim v0.3.2-phase3c; supersedes DE2Sim v0.3.1-phase3b; supersedes DE2Sim v0.3.0-phase3a; supersedes DE2Sim v0.2.0-phase2b)")
         return 0
 
     if args.build_demo_package:
@@ -201,6 +234,10 @@ def main(argv: Sequence[str] | None = None) -> int:
             proposals_payload = load_behavior_proposals(output / "behavior_proposals.json")
             decisions_payload = load_decisions(args.apply_behavior_decisions)
             approval_outputs = write_behavior_approval_outputs(asot_payload, proposals_payload, decisions_payload, output)
+            approved_payload = load_json(approval_outputs["asot_with_approved_behaviors"], "asot_with_approved_behaviors")
+            prompt_payload = load_json(output / "behavior_prompt.json", "behavior_prompt")
+            audit = build_external_generation_audit(asot_payload, prompt_payload, proposals_payload, load_json(approval_outputs["behavior_decisions"], "behavior_decisions"), approved_payload)
+            (output / "external_generation_audit.json").write_text(json.dumps(audit, indent=2, sort_keys=False, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
         except (ASOTBuildError, BehaviorApprovalError, BehaviorProposalError) as exc:
             print(f"error: {exc}", file=sys.stderr)
             return 2
@@ -294,6 +331,11 @@ def main(argv: Sequence[str] | None = None) -> int:
                         asot_payload,
                         Path(args.output),
                         args.ai_provider,
+                        model=args.ai_model,
+                        timeout_seconds=args.provider_timeout_seconds,
+                        max_attempts=args.provider_max_attempts,
+                        external_generation_purpose=args.external_generation_purpose,
+                        ollama_base_url=args.ollama_base_url,
                     )
                 except BehaviorProposalError as exc:
                     print(f"error: {exc}", file=sys.stderr)
@@ -302,6 +344,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                 print(behavior_outputs["behavior_proposals"])
                 print(behavior_outputs["behavior_review"])
                 print(behavior_outputs["behavior_generation_report"])
+                print(behavior_outputs["external_generation_audit"])
+                print(behavior_outputs["external_generation_summary"])
         if args.apply_behavior_decisions:
             try:
                 asot_payload = load_json(outputs["asot"], "asot")
@@ -309,6 +353,10 @@ def main(argv: Sequence[str] | None = None) -> int:
                 decisions_payload = load_decisions(args.apply_behavior_decisions)
                 approval_outputs = write_behavior_approval_outputs(asot_payload, proposals_payload, decisions_payload, Path(args.output))
                 report = load_json(approval_outputs["behavior_approval_report"], "behavior_approval_report")
+                approved_payload = load_json(approval_outputs["asot_with_approved_behaviors"], "asot_with_approved_behaviors")
+                prompt_payload = load_json(Path(args.output) / "behavior_prompt.json", "behavior_prompt")
+                audit = build_external_generation_audit(asot_payload, prompt_payload, proposals_payload, load_json(approval_outputs["behavior_decisions"], "behavior_decisions"), approved_payload)
+                (Path(args.output) / "external_generation_audit.json").write_text(json.dumps(audit, indent=2, sort_keys=False, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
             except (ASOTBuildError, BehaviorApprovalError, BehaviorProposalError) as exc:
                 print(f"error: {exc}", file=sys.stderr)
                 return 2

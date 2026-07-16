@@ -53,6 +53,13 @@ REQUIRED_SIMULATION = {
     "simulation_viewer.html": ("viewers/simulation_viewer.html", "viewer", "simulation", "Simulation playback viewer"),
 }
 
+OPTIONAL_BEHAVIOR = {
+    "external_generation_audit.json": ("artifacts/external_generation_audit.json", "artifact", "ai_evidence", "External generation audit"),
+    "external_generation_summary.md": ("reports/external_generation_summary.md", "report", "ai_evidence", "External generation summary"),
+    "ai_contribution_manifest.json": ("artifacts/ai_contribution_manifest.json", "artifact", "ai_evidence", "AI contribution manifest"),
+    "ollama_model_output.json": ("artifacts/ollama_model_output.json", "artifact", "ai_evidence", "Ollama model output diagnostics"),
+}
+
 
 def build_demo_package(
     engineering_package: Path | str,
@@ -81,6 +88,9 @@ def build_demo_package(
     _copy_file(source_zip, root / "source_package" / source_zip.name, copied, "source", "engineering_package", "Original engineering ZIP", True, "source-derived")
     for name, (rel, category, stage, description) in REQUIRED_BEHAVIOR.items():
         _copy_file(behavior_dir / name, root / rel, copied, category, stage, description, True, "source-derived")
+    for name, (rel, category, stage, description) in OPTIONAL_BEHAVIOR.items():
+        if (behavior_dir / name).is_file():
+            _copy_file(behavior_dir / name, root / rel, copied, category, stage, description, False, "generated")
     for name, (rel, category, stage, description) in REQUIRED_SIMULATION.items():
         _copy_file(simulation_dir / name, root / rel, copied, category, stage, description, True, "generated")
 
@@ -198,6 +208,9 @@ def _load_all(root: Path) -> dict[str, Any]:
         "behavior_proposals": j("artifacts/behavior_proposals.json"),
         "behavior_decisions": j("artifacts/behavior_decisions.json"),
         "behavior_approval_report": j("reports/behavior_approval_report.json"),
+        "external_generation_audit": j("artifacts/external_generation_audit.json") if (root / "artifacts/external_generation_audit.json").is_file() else {},
+        "ai_contribution_manifest": j("artifacts/ai_contribution_manifest.json") if (root / "artifacts/ai_contribution_manifest.json").is_file() else {},
+        "ollama_model_output": j("artifacts/ollama_model_output.json") if (root / "artifacts/ollama_model_output.json").is_file() else {},
         "approved_asot": j("artifacts/asot_with_approved_behaviors.json"),
         "simulation_inputs": j("artifacts/simulation_inputs.json"),
         "simulation_data": j("artifacts/simulation_data.json"),
@@ -251,26 +264,63 @@ def _ai_generation_evidence(data: dict[str, Any]) -> dict[str, Any]:
     proposal_items = proposals.get("proposals", [])
     generated_by = sorted({str(item.get("generated_by", "")) for item in proposal_items if isinstance(item, dict)})
     provider = proposals.get("provider", "")
+    proposal = proposal_items[0] if proposal_items and isinstance(proposal_items[0], dict) else {}
+    audit = data.get("external_generation_audit", {}) if isinstance(data.get("external_generation_audit"), dict) else {}
+    contribution_manifest = data.get("ai_contribution_manifest", {}) if isinstance(data.get("ai_contribution_manifest"), dict) else {}
+    confirmed = _confirmed_external_generation(data, proposal, audit)
     if provider == "offline" or generated_by == ["offline_template"]:
         status = "offline_non_generative"
         external = False
-    elif provider in {"openai", "anthropic"} and generated_by == ["ai_provider"]:
+        local = False
+    elif _confirmed_local_generation(data, proposal, audit):
+        status = "confirmed_local_generation"
+        external = False
+        local = True
+    elif confirmed:
         status = "confirmed_external_generation"
         external = True
+        local = False
+    elif audit.get("evidence_status") == "mocked_test_only":
+        status = "mocked_test_only"
+        external = False
+        local = False
+    elif provider in {"openai", "anthropic", "ollama"}:
+        status = "external_generation_failed"
+        external = False
+        local = False
     else:
         status = "not_available"
         external = False
+        local = False
     return {
         "schema_version": "de2sim.ai_generation_evidence.v1",
         "provider": provider,
         "model": proposals.get("model", ""),
         "generated_by": generated_by,
         "prompt_hash": proposals.get("prompt_hash", ""),
-        "response_hash": "",
+        "request_hash": proposal.get("request_hash", audit.get("request_hash", "")),
+        "response_hash": proposal.get("response_hash", audit.get("response_hash", "")),
+        "validated_proposal_hash": audit.get("validated_proposal_hash", ""),
+        "enrichment_hash": proposal.get("enrichment_hash", audit.get("enrichment_hash", "")),
+        "enrichment_completeness": proposal.get("enrichment_completeness", audit.get("enrichment_completeness", contribution_manifest.get("enrichment_completeness", ""))),
+        "generated_field_count": proposal.get("generated_field_count", audit.get("generated_field_count", contribution_manifest.get("generated_field_count", 0))),
+        "generated_character_count": proposal.get("generated_character_count", audit.get("generated_character_count", contribution_manifest.get("generated_character_count", 0))),
+        "generated_json_paths": proposal.get("generated_json_paths", audit.get("generated_json_paths", contribution_manifest.get("generated_json_paths", []))),
+        "omitted_or_empty_json_paths": proposal.get("omitted_or_empty_json_paths", audit.get("omitted_or_empty_json_paths", contribution_manifest.get("omitted_or_empty_json_paths", []))),
+        "deterministic_structure_json_paths": proposal.get("deterministic_structure_json_paths", audit.get("deterministic_structure_json_paths", contribution_manifest.get("deterministic_structure_json_paths", []))),
+        "normalized_enrichment_hash": proposal.get("normalized_enrichment_hash", audit.get("normalized_enrichment_hash", contribution_manifest.get("normalized_enrichment_hash", ""))),
+        "ai_contribution_manifest": proposal.get("ai_contribution_manifest", audit.get("ai_contribution_manifest", contribution_manifest)),
+        "generation_mode": proposal.get("generation_mode", audit.get("generation_mode", "")),
+        "repair_attempted": bool(audit.get("repair_attempted", False)),
+        "repair_succeeded": bool(audit.get("repair_succeeded", False)),
+        "proposal_id": proposal.get("proposal_id", audit.get("proposal_id", "")),
+        "approved_behavior_id": data["simulation_data"].get("asot_facts", {}).get("approved_behavior_id", ""),
         "human_approval_status": data["behavior_approval_report"].get("valid", False),
         "actual_external_api_call_occurred": external,
+        "actual_local_model_inference_occurred": local,
+        "local_endpoint": proposal.get("local_endpoint", audit.get("local_endpoint", "")),
         "evidence_status": status,
-        "mocked_provider_tests": ["OpenAIProvider injected client tests", "AnthropicProvider injected client tests"],
+        "mocked_provider_tests": ["OpenAIProvider injected client tests", "AnthropicProvider injected client tests", "OllamaProvider injected client tests"],
         "limitations": [
             "Offline deterministic template output is not generative AI.",
             "No API keys, raw authorization data, or external response bodies are packaged.",
@@ -278,10 +328,64 @@ def _ai_generation_evidence(data: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _confirmed_external_generation(data: dict[str, Any], proposal: dict[str, Any], audit: dict[str, Any]) -> bool:
+    if not proposal or not audit:
+        return False
+    if audit.get("evidence_status") != "confirmed_external_generation":
+        return False
+    if proposal.get("generated_by") != "external_generative_ai" or not proposal.get("actual_external_api_call_occurred"):
+        return False
+    if proposal.get("proposal_id") != audit.get("proposal_id"):
+        return False
+    if proposal.get("prompt_hash") != data["behavior_prompt"].get("prompt_hash") or audit.get("prompt_hash") != proposal.get("prompt_hash"):
+        return False
+    if proposal.get("response_hash") != audit.get("response_hash"):
+        return False
+    decisions = [item for item in data["behavior_decisions"].get("decisions", []) if isinstance(item, dict)]
+    if not any(item.get("proposal_id") == proposal.get("proposal_id") and item.get("approval_status") == "approved" for item in decisions):
+        return False
+    approved_behavior = next((item for item in data["approved_asot"].get("behaviors", []) if isinstance(item, dict) and item.get("proposal_id") == proposal.get("proposal_id")), {})
+    if not approved_behavior or approved_behavior.get("stable_id") != audit.get("approved_behavior_id"):
+        return False
+    if data["simulation_data"].get("asot_facts", {}).get("approved_behavior_id") != approved_behavior.get("stable_id"):
+        return False
+    return True
+
+
+def _confirmed_local_generation(data: dict[str, Any], proposal: dict[str, Any], audit: dict[str, Any]) -> bool:
+    if not proposal or not audit:
+        return False
+    if audit.get("evidence_status") != "confirmed_local_generation":
+        return False
+    if proposal.get("generated_by") != "local_generative_ai":
+        return False
+    if not proposal.get("actual_local_model_inference_occurred") or proposal.get("actual_external_api_call_occurred"):
+        return False
+    if audit.get("actual_external_api_call_occurred") or not audit.get("actual_local_model_inference_occurred"):
+        return False
+    if proposal.get("proposal_id") != audit.get("proposal_id"):
+        return False
+    if proposal.get("prompt_hash") != data["behavior_prompt"].get("prompt_hash") or audit.get("prompt_hash") != proposal.get("prompt_hash"):
+        return False
+    if proposal.get("response_hash") != audit.get("response_hash"):
+        return False
+    decisions = [item for item in data["behavior_decisions"].get("decisions", []) if isinstance(item, dict)]
+    if not any(item.get("proposal_id") == proposal.get("proposal_id") and item.get("approval_status") == "approved" for item in decisions):
+        return False
+    approved_behavior = next((item for item in data["approved_asot"].get("behaviors", []) if isinstance(item, dict) and item.get("proposal_id") == proposal.get("proposal_id")), {})
+    if not approved_behavior or approved_behavior.get("stable_id") != audit.get("approved_behavior_id"):
+        return False
+    if data["simulation_data"].get("asot_facts", {}).get("approved_behavior_id") != approved_behavior.get("stable_id"):
+        return False
+    return True
+
+
 def _reports(data: dict[str, Any], cli_version: str, test_summary: str, ai: dict[str, Any]) -> dict[str, str]:
     sim = data["simulation_data"]
     status = sim["simulation_status"]
     req = sim["requirements_evaluation"]
+    general_limitations = _general_limitations_text(ai)
+    ai_limitation_note = _ai_limitations_report_text(ai)
     readme = f"""# DE2Sim Submission Demo
 
 Open `demo_dashboard.html` directly or run `Launch_DE2Sim_Demo.bat` on Windows.
@@ -296,7 +400,7 @@ The approved behavior is `{sim['asot_facts']['approved_behavior_id']}` with sequ
 
 Determinism is supported through stable IDs, prompt hashes, deterministic JSON/CSV ordering, fixed ZIP timestamps, and path-independent package links. Security controls include local standalone HTML, no external resources, no dynamic code evaluation, and no secret packaging.
 
-Limitations: no Godot export, no flight certification, no authoritative validation data, and offline behavior proposals are deterministic templates rather than confirmed external generative-AI output.
+Limitations: {general_limitations}
 """
     align = """# Challenge Alignment
 
@@ -315,7 +419,7 @@ Evidence: `demo_script.md`, generated dashboard, and runnable local viewers.
 ## Value to Transition
 Evidence: traceability reports, requirement evaluation, and clear limitations.
 """
-    script = """# 4-5 Minute Demo Script
+    script = f"""# 4-5 Minute Demo Script
 
 1. Problem: engineering data is readable but not immediately runnable.
 2. Engineering ZIP: open `source_package/`.
@@ -325,7 +429,7 @@ Evidence: traceability reports, requirement evaluation, and clear limitations.
 6. Compare fidelities: show low/high landing reserves and timing.
 7. Requirement evidence: open `artifacts/requirements_evaluation.json`.
 8. Transition value: show `reports/challenge_alignment.md`.
-9. Limitations: state no flight certification, no Godot, and offline behavior templates are not confirmed external AI.
+9. Limitations: state no flight certification, no Godot, and {ai_limitation_note}.
 """
     return {
         "README_DEMO.md": readme,
@@ -333,6 +437,57 @@ Evidence: traceability reports, requirement evaluation, and clear limitations.
         "reports/challenge_alignment.md": align,
         "reports/demo_script.md": script,
     }
+
+
+def _general_limitations_text(ai: dict[str, Any]) -> str:
+    if ai.get("evidence_status") == "offline_non_generative":
+        return "No flight certification, no authoritative vehicle validation data, no Godot export, no external resources, and offline behavior proposals are deterministic templates."
+    if ai.get("evidence_status") == "confirmed_local_generation":
+        return (
+            "No flight certification, no authoritative vehicle validation data, and no Godot export. "
+            "Offline template mode is non-generative; this package uses confirmed local generative AI through Ollama with human approval."
+        )
+    if ai.get("evidence_status") == "confirmed_external_generation":
+        return (
+            "No flight certification, no authoritative vehicle validation data, and no Godot export. "
+            "Offline template mode is non-generative; this package uses confirmed external generative AI with human approval."
+        )
+    return "No flight certification, no authoritative vehicle validation data, no Godot export, and no generated behavior is used without human approval."
+
+
+def _known_limitations(ai: dict[str, Any]) -> list[str]:
+    base = [
+        "demonstrative point-mass simulation",
+        "no flight certification",
+        "no authoritative vehicle validation",
+        "no Godot export",
+    ]
+    if ai.get("evidence_status") == "confirmed_local_generation":
+        return base + [
+            "authoritative behavior structure is ASOT-derived and deterministic",
+            "behavioral narrative enrichment was generated locally with Ollama",
+            "local AI enrichment may be partial",
+            "no external AI service was used",
+        ]
+    if ai.get("evidence_status") == "confirmed_external_generation":
+        return base + [
+            "authoritative behavior structure is ASOT-derived and deterministic",
+            "behavioral narrative enrichment was generated by a confirmed external AI provider",
+            "AI-generated behavior evidence requires human approval",
+        ]
+    if ai.get("evidence_status") == "offline_non_generative":
+        return base + ["current proposal is an offline deterministic template"]
+    return base + ["behavior proposal evidence is not confirmed as generative AI"]
+
+
+def _ai_limitations_report_text(ai: dict[str, Any]) -> str:
+    if ai.get("evidence_status") == "confirmed_local_generation":
+        return "the behavior structure is ASOT-derived while narrative enrichment was generated locally with Ollama"
+    if ai.get("evidence_status") == "confirmed_external_generation":
+        return "the behavior structure is ASOT-derived while narrative enrichment was generated by a confirmed external AI provider"
+    if ai.get("evidence_status") == "offline_non_generative":
+        return "offline behavior templates are non-generative"
+    return "behavior proposal evidence requires human review"
 
 
 def _write_evidence_matrix(path: Path) -> None:
@@ -388,8 +543,30 @@ def _dashboard(data: dict[str, Any], ai: dict[str, Any]) -> str:
             "decision_timestamp": approved_decision.get("decided_at_utc", ""),
             "artifact": "artifacts/behavior_decisions.json",
         },
+        "general_limitations": _general_limitations_text(ai),
+        "known_limitations": _known_limitations(ai),
         "requirement_summary": _requirement_summary(sim["requirements_evaluation"]),
         "ai": ai,
+        "external_ai_status": {
+            "label": "Confirmed Local Generative AI" if ai.get("evidence_status") == "confirmed_local_generation" else "Confirmed External Generative AI" if ai.get("evidence_status") == "confirmed_external_generation" else str(ai.get("evidence_status", "")),
+            "provider": "Ollama" if ai.get("provider") == "ollama" else ai.get("provider", ""),
+            "model": ai.get("model", ""),
+            "proposal_id": ai.get("proposal_id", ""),
+            "approved_behavior_id": ai.get("approved_behavior_id", ""),
+            "prompt_hash": ai.get("prompt_hash", ""),
+            "response_hash": ai.get("response_hash", ""),
+            "enrichment_hash": ai.get("enrichment_hash", ""),
+            "enrichment_completeness": ai.get("enrichment_completeness", ""),
+            "generated_field_count": ai.get("generated_field_count", 0),
+            "generated_character_count": ai.get("generated_character_count", 0),
+            "generated_json_paths": ai.get("generated_json_paths", []),
+            "omitted_or_empty_json_paths": ai.get("omitted_or_empty_json_paths", []),
+            "normalized_enrichment_hash": ai.get("normalized_enrichment_hash", ""),
+            "generation_mode": ai.get("generation_mode", ""),
+            "repair_attempted": ai.get("repair_attempted", False),
+            "repair_succeeded": ai.get("repair_succeeded", False),
+            "human_approval_status": ai.get("human_approval_status", False),
+        },
         "links": [
             ["ASOT Traceability Viewer", "viewers/asot_traceability_viewer.html"],
             ["Behavior Review Viewer", "viewers/behavior_review.html"],
@@ -549,7 +726,7 @@ _HTML = """<!doctype html>
 <section><h2>Eight-Stage Pipeline</h2><div class="pipeline" id="pipeline"></div></section>
 <section><h2>Status Cards</h2><div class="grid" id="cards"></div></section>
 <section><h2>Open Artifacts</h2><div class="links" id="links"></div></section>
-<section class="card"><h2>Limitations</h2><p>No flight certification, no authoritative validation data, no Godot export, no external resources, and offline behavior proposals are deterministic templates unless external AI evidence is confirmed.</p></section>
+<section class="card"><h2>Limitations</h2><p id="general-limitations"></p></section>
 </main>
 <script id="dashboard-data" type="application/json">__DASHBOARD_DATA__</script>
 <script>
@@ -560,6 +737,7 @@ function add(tag,parent,cls){const el=document.createElement(tag);if(cls)el.clas
 ["Engineering Package","Parsed Artifacts","ASOT","Provenance and Traceability","Behavior Proposal","Human Approval","Executable Simulation","Requirement Evidence"].forEach(s=>txt(add("div",document.getElementById("pipeline"),"stage"),s));
 const cards=document.getElementById("cards");
 function card(title,body,cls){const c=add("div",cards,"card");txt(add("h2",c),title);const p=add("div",c,"card-body "+(cls||""));txt(p,body);return c}
+txt(document.getElementById("general-limitations"),data.general_limitations);
 card("Package Status","Self-contained local package with relative links only.","ok");
 card("ASOT Validation",(data.asot_validation.passed?"PASSED":"FAILED")+"\\nErrors: "+data.asot_validation.error_count+"\\nWarnings: "+data.asot_validation.warning_count+"\\nArtifact: "+data.asot_validation.artifact,data.asot_validation.passed?"ok":"bad");
 card("Provenance Coverage","Coverage: "+data.provenance.coverage_percentage+"%\\nProvenance: "+data.provenance.provenance_manifest+"\\nTraceability: "+data.provenance.traceability_report,"ok");
@@ -570,8 +748,8 @@ card("High-Fidelity Result","mission completed: "+data.status.high.mission_compl
 card("Scenario Feasibility",data.status.low.scenario_feasibility_status+" / "+data.status.high.scenario_feasibility_status,"ok");
 const reqCard=card("Requirement Results","","ok");const reqBody=reqCard.querySelector(".card-body");txt(reqBody,"");["Low fidelity","High fidelity"].forEach(fid=>{const h=add("div",reqBody,"req-line");txt(h,fid+":");data.requirement_summary.filter(r=>r.fidelity===fid).forEach(r=>{const line=add("div",reqBody,"req-line");txt(line,"- "+r.requirement+": "+r.status+" ("+r.requirement_id+(r.max_observed_speed_mps!==""?", max observed speed "+r.max_observed_speed_mps+" m/s":"")+")")})});
 card("Reproducibility Status","Manifest hashes, deterministic ZIP timestamps, and no absolute paths.","ok");
-card("AI-Generation Status",data.ai.evidence_status+"\\nactual external API call: "+data.ai.actual_external_api_call_occurred,(data.ai.evidence_status==="offline_non_generative"?"warn":"ok"));
-card("Known Limitations","- demonstrative point-mass simulation\\n- no flight certification\\n- no authoritative vehicle validation\\n- no Godot export\\n- current proposal is an offline deterministic template","warn");
+card("AI-Generation Status",data.external_ai_status.label+"\\n"+(data.ai.evidence_status==="confirmed_local_generation"?"ASOT-bound behavior structure with local AI enrichment\\n":"")+"provider: "+data.external_ai_status.provider+"\\nmodel: "+data.external_ai_status.model+"\\ngeneration mode: "+data.external_ai_status.generation_mode+"\\nenrichment completeness: "+data.external_ai_status.enrichment_completeness+"\\ngenerated field count: "+data.external_ai_status.generated_field_count+"\\nLocal JSON syntax repair: "+(data.external_ai_status.repair_attempted?"used":"not used")+"\\nproposal ID: "+data.external_ai_status.proposal_id+"\\napproved behavior stable ID: "+data.external_ai_status.approved_behavior_id+"\\nprompt hash: "+data.external_ai_status.prompt_hash+"\\nresponse hash: "+data.external_ai_status.response_hash+"\\nenrichment hash: "+data.external_ai_status.enrichment_hash+"\\nhuman approval status: "+data.external_ai_status.human_approval_status+"\\nactual local inference: "+data.ai.actual_local_model_inference_occurred+"\\nactual external API call: "+data.ai.actual_external_api_call_occurred,(data.ai.evidence_status==="offline_non_generative"?"warn":"ok"));
+card("Known Limitations",(data.known_limitations||[]).map(x=>"- "+x).join("\\n"),"warn");
 const links=document.getElementById("links");data.links.forEach(([label,href])=>{const a=add("a",links);a.href=href;txt(a,label)});
 </script>
 </body>

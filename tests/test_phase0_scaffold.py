@@ -30,7 +30,7 @@ class Phase0ScaffoldTests(unittest.TestCase):
     def test_version(self) -> None:
         result = self.run_cli("--version")
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("DE2Sim v0.6.0-phase6a", result.stdout)
+        self.assertIn("DE2Sim v0.6.5-phase6b-local", result.stdout)
         self.assertIn("DE2Sim v0.5.0-phase5a", result.stdout)
         self.assertIn("DE2Sim v0.2.0-phase2b", result.stdout)
 

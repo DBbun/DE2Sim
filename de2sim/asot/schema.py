@@ -336,6 +336,25 @@ class Behavior(EngineeringEntity):
     provider: str = ""
     model: str = ""
     prompt_hash: str = ""
+    response_hash: str = ""
+    request_hash: str = ""
+    actual_external_api_call_occurred: bool = False
+    actual_local_model_inference_occurred: bool = False
+    evidence_status: str = ""
+    local_endpoint: str = ""
+    generation_mode: str = ""
+    enrichment_hash: str = ""
+    enrichment_completeness: str = ""
+    generated_field_count: int = 0
+    generated_character_count: int = 0
+    generated_json_paths: list[str] = field(default_factory=list)
+    omitted_or_empty_json_paths: list[str] = field(default_factory=list)
+    deterministic_structure_json_paths: list[str] = field(default_factory=list)
+    normalized_enrichment_hash: str = ""
+    ai_contribution_manifest: dict[str, Any] = field(default_factory=dict)
+    validated_proposal_hash: str = ""
+    local_ai_enrichment: dict[str, Any] = field(default_factory=dict)
+    limitations: list[str] = field(default_factory=list)
     proposal_id: str = ""
     referenced_requirement_ids: list[str] = field(default_factory=list)
     referenced_parameter_ids: list[str] = field(default_factory=list)
@@ -359,6 +378,25 @@ class Behavior(EngineeringEntity):
                 "provider": self.provider,
                 "model": self.model,
                 "prompt_hash": self.prompt_hash,
+                "response_hash": self.response_hash,
+                "request_hash": self.request_hash,
+                "actual_external_api_call_occurred": self.actual_external_api_call_occurred,
+                "actual_local_model_inference_occurred": self.actual_local_model_inference_occurred,
+                "evidence_status": self.evidence_status,
+                "local_endpoint": self.local_endpoint,
+                "generation_mode": self.generation_mode,
+                "enrichment_hash": self.enrichment_hash,
+                "enrichment_completeness": self.enrichment_completeness,
+                "generated_field_count": self.generated_field_count,
+                "generated_character_count": self.generated_character_count,
+                "generated_json_paths": _sorted_texts(self.generated_json_paths),
+                "omitted_or_empty_json_paths": _sorted_texts(self.omitted_or_empty_json_paths),
+                "deterministic_structure_json_paths": _sorted_texts(self.deterministic_structure_json_paths),
+                "normalized_enrichment_hash": self.normalized_enrichment_hash,
+                "ai_contribution_manifest": _canonical_payload(self.ai_contribution_manifest),
+                "validated_proposal_hash": self.validated_proposal_hash,
+                "local_ai_enrichment": _canonical_payload(self.local_ai_enrichment),
+                "limitations": _sorted_texts(self.limitations),
                 "proposal_id": self.proposal_id,
                 "referenced_requirement_ids": _sorted_texts(self.referenced_requirement_ids),
                 "referenced_parameter_ids": _sorted_texts(self.referenced_parameter_ids),
@@ -385,6 +423,25 @@ class Behavior(EngineeringEntity):
             provider=str(data.get("provider", "")),
             model=str(data.get("model", "")),
             prompt_hash=str(data.get("prompt_hash", "")),
+            response_hash=str(data.get("response_hash", "")),
+            request_hash=str(data.get("request_hash", "")),
+            actual_external_api_call_occurred=bool(data.get("actual_external_api_call_occurred", False)),
+            actual_local_model_inference_occurred=bool(data.get("actual_local_model_inference_occurred", False)),
+            evidence_status=str(data.get("evidence_status", "")),
+            local_endpoint=str(data.get("local_endpoint", "")),
+            generation_mode=str(data.get("generation_mode", "")),
+            enrichment_hash=str(data.get("enrichment_hash", "")),
+            enrichment_completeness=str(data.get("enrichment_completeness", "")),
+            generated_field_count=int(data.get("generated_field_count", 0) or 0),
+            generated_character_count=int(data.get("generated_character_count", 0) or 0),
+            generated_json_paths=[str(item) for item in data.get("generated_json_paths", [])],
+            omitted_or_empty_json_paths=[str(item) for item in data.get("omitted_or_empty_json_paths", [])],
+            deterministic_structure_json_paths=[str(item) for item in data.get("deterministic_structure_json_paths", [])],
+            normalized_enrichment_hash=str(data.get("normalized_enrichment_hash", "")),
+            ai_contribution_manifest=dict(data.get("ai_contribution_manifest", {})) if isinstance(data.get("ai_contribution_manifest"), dict) else {},
+            validated_proposal_hash=str(data.get("validated_proposal_hash", "")),
+            local_ai_enrichment=dict(data.get("local_ai_enrichment", {})) if isinstance(data.get("local_ai_enrichment"), dict) else {},
+            limitations=[str(item) for item in data.get("limitations", [])],
             proposal_id=str(data.get("proposal_id", "")),
             referenced_requirement_ids=[str(item) for item in data.get("referenced_requirement_ids", [])],
             referenced_parameter_ids=[str(item) for item in data.get("referenced_parameter_ids", [])],
