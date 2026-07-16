@@ -17,6 +17,7 @@ from de2sim.ingest.package_reader import (
 )
 from de2sim.provenance.manifest import ProvenanceManifestError, write_provenance_outputs
 from de2sim.provenance.trace import validate_traceability
+from de2sim.simulation.runner import SimulationError, run_simulation_build
 from de2sim.visualization.traceability_viewer import TraceabilityViewerError, write_viewer_outputs
 
 
@@ -25,7 +26,7 @@ _PHASE0_MESSAGE = (
     "DE2Sim Phase 0 scaffold is installed, but engineering-package ingestion "
     "is not implemented yet."
 )
-_CLI_VERSION = "0.4.1-phase4b"
+_CLI_VERSION = "0.5.0-phase5a"
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -85,6 +86,21 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="PATH_TO_JSON",
         help="Apply explicit review decisions to behavior_proposals.json and write a new approved-behavior ASOT.",
     )
+    parser.add_argument(
+        "--build-simulation",
+        action="store_true",
+        help="Build deterministic Phase 5A low/high fidelity simulation artifacts from an approved ASOT.",
+    )
+    parser.add_argument(
+        "--approved-asot",
+        metavar="PATH",
+        help="Approved ASOT path for --build-simulation.",
+    )
+    parser.add_argument(
+        "--scenario",
+        metavar="PATH",
+        help="Optional explicit simulation scenario JSON for --build-simulation.",
+    )
     return parser
 
 
@@ -94,7 +110,32 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     if args.version:
-        print(f"DE2Sim v{_CLI_VERSION} (supersedes DE2Sim v0.3.2-phase3c; supersedes DE2Sim v0.3.1-phase3b; supersedes DE2Sim v0.3.0-phase3a; supersedes DE2Sim v0.2.0-phase2b)")
+        print(f"DE2Sim v{_CLI_VERSION} (supersedes DE2Sim v0.4.1-phase4b; supersedes DE2Sim v0.3.2-phase3c; supersedes DE2Sim v0.3.1-phase3b; supersedes DE2Sim v0.3.0-phase3a; supersedes DE2Sim v0.2.0-phase2b)")
+        return 0
+
+    if args.build_simulation:
+        if not args.approved_asot:
+            parser.exit(2, "error: --approved-asot is required with --build-simulation.\n")
+        if not args.output:
+            parser.exit(2, "error: --output is required with --build-simulation.\n")
+        try:
+            simulation_outputs = run_simulation_build(args.approved_asot, args.output, args.scenario)
+        except SimulationError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 2
+        for key in (
+            "simulation_inputs",
+            "simulation_model",
+            "telemetry_low",
+            "telemetry_high",
+            "simulation_events",
+            "requirements_evaluation",
+            "fidelity_comparison",
+            "simulation_summary",
+            "simulation_data",
+            "simulation_viewer",
+        ):
+            print(simulation_outputs[key])
         return 0
 
     if not args.engineering_package and not args.apply_behavior_decisions:

@@ -1,5 +1,66 @@
 # DE2Sim Architecture
 
+## Phase 5A Scope
+
+Phase 5A adds an executable, deterministic UAS mission simulation from an
+approved ASOT. It stops at local low/high fidelity simulation artifacts and a
+standalone HTML playback viewer. It does not implement Godot export,
+packaging, deployment, arbitrary equation evaluation, generated code execution,
+or Phase 6 work.
+
+Run:
+
+```text
+python -m de2sim.cli.challenge_pipeline --approved-asot asot_with_approved_behaviors.json --output out --build-simulation
+```
+
+Optional scenario inputs can be supplied with `--scenario scenario.json`. When
+omitted, conservative deterministic demonstration assumptions are written and
+clearly labeled as `demonstration_assumption`, not ASOT, CAD, SysML, or
+authoritative data.
+The default demonstration route and power assumptions are tuned to land with
+positive reserve in both fidelities after waypoint arrival, loiter,
+low-battery threshold crossing, source-derived ReturnToBase invocation, and
+home landing.
+
+Outputs:
+
+- `simulation_inputs.json`
+- `simulation_model.json`
+- `telemetry_low.csv`
+- `telemetry_high.csv`
+- `simulation_events.json`
+- `requirements_evaluation.json`
+- `fidelity_comparison.json`
+- `simulation_summary.md`
+- `simulation_data.json`
+- `simulation_viewer.html`
+
+The simulation adapter requires the approved `Low Battery Return-to-Base`
+behavior, source-derived `ReturnToBase` behavior, battery threshold, battery
+capacity, max speed, linked low-battery-return and maximum-speed requirements,
+the transition sequence `preflight -> mission_flight -> return_to_base ->
+landed`, and valid provenance references. Missing engineering values are
+rejected instead of inferred.
+
+The low-fidelity model is a two-dimensional kinematic point model with
+instantaneous heading changes, no wind, no acceleration dynamics, speed capped
+at ASOT `max_speed`, and fixed power draw. The high-fidelity model is a
+demonstrative point-mass model with velocity state, acceleration limit,
+constant wind disturbance, idle power, and speed-dependent power draw. Neither
+fidelity is claimed physically correct without validation data.
+
+If battery energy reaches zero before landing, powered movement stops, a
+`battery_depleted` event is emitted, telemetry terminates, no landed event is
+created, and scenario feasibility fails. Low Battery Return and Maximum Speed
+requirement evaluations remain separate from scenario feasibility.
+
+The viewer opens locally, embeds escaped JSON in an `application/json` script
+element, uses `textContent` for dynamic text, uses native SVG for the map and
+charts, and does not use external resources, `eval`, `exec`, `Function`,
+`document.write`, dynamic scripts, or file fetching. The browser plays back
+precomputed telemetry and does not recompute authoritative simulation results.
+
 ## Phase 4B Scope
 
 Phase 4B refines the offline behavior proposal provider without adding

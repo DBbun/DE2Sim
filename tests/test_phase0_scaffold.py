@@ -30,6 +30,7 @@ class Phase0ScaffoldTests(unittest.TestCase):
     def test_version(self) -> None:
         result = self.run_cli("--version")
         self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("DE2Sim v0.5.0-phase5a", result.stdout)
         self.assertIn("DE2Sim v0.2.0-phase2b", result.stdout)
 
     def test_missing_engineering_package_is_controlled_error(self) -> None:
