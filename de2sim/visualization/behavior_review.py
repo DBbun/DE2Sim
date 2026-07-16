@@ -46,8 +46,19 @@ def write_behavior_review(asot: dict[str, Any], proposals_payload: dict[str, Any
 
 
 def render_behavior_review_html(data: dict[str, Any]) -> str:
-    data_text = json.dumps(data, indent=2, sort_keys=False, ensure_ascii=False).replace("</", "<\\/")
+    data_text = _json_for_script_data(data)
     return _HTML.replace("__BEHAVIOR_REVIEW_DATA__", data_text)
+
+
+def _json_for_script_data(data: dict[str, Any]) -> str:
+    text = json.dumps(data, indent=2, sort_keys=False, ensure_ascii=False)
+    return (
+        text.replace("&", "\\u0026")
+        .replace("<", "\\u003c")
+        .replace(">", "\\u003e")
+        .replace("\u2028", "\\u2028")
+        .replace("\u2029", "\\u2029")
+    )
 
 
 def _brief(item: dict[str, Any], id_key: str) -> dict[str, Any]:
@@ -91,7 +102,7 @@ function setDecision(id,status){if(status)decisions.set(id,{proposal_id:id,appro
 function drawMachine(parent,proposal){const states=proposal.states||[];const transitions=proposal.transitions||[];const width=Math.max(420,150*Math.max(1,states.length));const y=70;const svg=svgChild("svg",parent,{class:"machine",role:"img","aria-label":"State-machine diagram",viewBox:"0 0 "+width+" 140"});const defs=svgChild("defs",svg,{});const marker=svgChild("marker",defs,{id:"arrow-"+proposal.proposal_id,viewBox:"0 0 10 10",refX:"9",refY:"5",markerWidth:"6",markerHeight:"6",orient:"auto-start-reverse"});svgChild("path",marker,{d:"M0 0 L10 5 L0 10 Z"});const byState=new Map();states.forEach((state,index)=>byState.set(String(state),70+index*140));transitions.forEach(t=>{const start=byState.get(String(t.from||"")),end=byState.get(String(t.to||""));if(start==null||end==null)return;svgChild("line",svg,{x1:start+30,y1:y,x2:end-30,y2:y,"marker-end":"url(#arrow-"+proposal.proposal_id+")"});const label=svgChild("text",svg,{x:(start+end)/2,y:y-32,"text-anchor":"middle"});txt(label,String(t.trigger||t.guard||t.action||"").slice(0,24));});states.forEach((state,index)=>{const x=70+index*140;svgChild("circle",svg,{cx:x,cy:y,r:28});const label=svgChild("text",svg,{x:x,y:y+5,"text-anchor":"middle"});txt(label,String(state).slice(0,18));});}
 function renderMeta(){const m=document.getElementById("meta");clear(m);["ASOT "+data.asot_id,"provider "+data.provider,"model "+data.model,"prompt "+data.prompt_hash].forEach(v=>{const s=child("span",m,{});txt(s,v);});}
 function render(){renderMeta();const root=document.getElementById("cards");clear(root);data.cards.forEach(card=>{const p=card.proposal;const c=child("article",root,{class:"card"});const h=child("h2",c,{});txt(h,p.name+" ("+p.proposal_id+")");const grid=child("div",c,{class:"grid"});const left=child("div",grid,{});const right=child("div",grid,{});kv(left,"Description",p.description);kv(left,"States",p.states);kv(left,"Transitions",p.transitions.map(t=>(t.from||"")+" -> "+(t.to||"")+" / "+(t.trigger||"")));kv(left,"Triggers",p.triggers);kv(left,"Guards",p.guards);kv(left,"Actions",p.actions);const holder=child("div",right,{class:"section"});const label=child("div",holder,{class:"label"});txt(label,"State machine");drawMachine(holder,p);kv(right,"Provider and model",p.provider+" / "+p.model);kv(right,"Confidence",p.confidence);kv(right,"Assumptions",p.assumptions);kv(right,"Risks",p.risks);kv(right,"Validation warnings",p.validation_warnings);list(right,"Linked requirements",card.requirements,"text");list(right,"Linked parameters",card.parameters,"text");list(right,"Provenance/source evidence",card.provenance,"text");const a=child("div",c,{class:"actions"});[["approved","Approve"],["rejected","Reject"],["needs_revision","Needs revision"],["","Reset decision"]].forEach(([status,labelText])=>{const b=child("button",a,{type:"button","data-status":status});txt(b,labelText);b.addEventListener("click",()=>setDecision(p.proposal_id,status));});const d=child("div",c,{class:"decision"});txt(d,"Decision: "+((decisions.get(p.proposal_id)||{}).approval_status||"not selected"));});}
-document.getElementById("download").addEventListener("click",()=>{const payload={schema_version:"de2sim.behavior_decisions.v1",decisions:[...decisions.values()]};const blob=new Blob([JSON.stringify(payload,null,2)+"\n"],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="behavior_decisions.json";a.click();URL.revokeObjectURL(url);});
+document.getElementById("download").addEventListener("click",()=>{const payload={schema_version:"de2sim.behavior_decisions.v1",decisions:[...decisions.values()]};const blob=new Blob([JSON.stringify(payload,null,2)+"\\n"],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="behavior_decisions.json";a.click();URL.revokeObjectURL(url);});
 render();
 </script>
 </body>
