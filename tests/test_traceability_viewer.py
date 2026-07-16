@@ -175,6 +175,12 @@ class TraceabilityViewerTests(unittest.TestCase):
             self.assertIn(text, html)
         self.assertEqual(html.count("Traceability coverage for this processed package"), 1)
         self.assertNotIn("Traceability coverage for this processed package \"+data.metrics.traceability_percentage", html)
+        self.assertNotIn("header{height:", html)
+        self.assertNotIn("height:calc(100vh", html)
+        self.assertIn("body{margin:0;height:100vh;display:flex;flex-direction:column", html)
+        self.assertIn("header{flex:0 0 auto;padding:14px 18px", html)
+        self.assertIn("flex:1 1 auto;min-height:0;min-width:1180px", html)
+        self.assertIn("svg{display:block;width:100%;height:100%;min-height:0", html)
 
         for css in (
             "grid-template-columns:minmax(190px,15%) minmax(640px,60%) minmax(320px,25%)",
