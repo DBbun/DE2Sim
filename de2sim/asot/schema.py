@@ -326,11 +326,22 @@ class PhysicalModel(EngineeringEntity):
 class Behavior(EngineeringEntity):
     behavior_type: str = "unknown"
     states: list[str] = field(default_factory=list)
+    transitions: list[dict[str, Any]] = field(default_factory=list)
     triggers: list[str] = field(default_factory=list)
+    guards: list[str] = field(default_factory=list)
     actions: list[str] = field(default_factory=list)
     owning_component_id: str = ""
     generated_by: str = "human"
     approval_status: str = "not_required"
+    provider: str = ""
+    model: str = ""
+    prompt_hash: str = ""
+    proposal_id: str = ""
+    referenced_requirement_ids: list[str] = field(default_factory=list)
+    referenced_parameter_ids: list[str] = field(default_factory=list)
+    referenced_physical_model_ids: list[str] = field(default_factory=list)
+    source_provenance_ids: list[str] = field(default_factory=list)
+    approval_decision: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         data = self._base_dict()
@@ -338,11 +349,22 @@ class Behavior(EngineeringEntity):
             {
                 "behavior_type": self.behavior_type,
                 "states": _sorted_texts(self.states),
+                "transitions": _sort_dicts([_canonical_payload(item) for item in self.transitions if isinstance(item, dict)], "from"),
                 "triggers": _sorted_texts(self.triggers),
+                "guards": _sorted_texts(self.guards),
                 "actions": _sorted_texts(self.actions),
                 "owning_component_id": self.owning_component_id,
                 "generated_by": self.generated_by,
                 "approval_status": self.approval_status,
+                "provider": self.provider,
+                "model": self.model,
+                "prompt_hash": self.prompt_hash,
+                "proposal_id": self.proposal_id,
+                "referenced_requirement_ids": _sorted_texts(self.referenced_requirement_ids),
+                "referenced_parameter_ids": _sorted_texts(self.referenced_parameter_ids),
+                "referenced_physical_model_ids": _sorted_texts(self.referenced_physical_model_ids),
+                "source_provenance_ids": _sorted_texts(self.source_provenance_ids),
+                "approval_decision": _canonical_payload(self.approval_decision),
             }
         )
         return data
@@ -353,11 +375,22 @@ class Behavior(EngineeringEntity):
             **cls._base_kwargs(data),
             behavior_type=str(data.get("behavior_type", "")),
             states=[str(item) for item in data.get("states", [])],
+            transitions=[dict(item) for item in data.get("transitions", []) if isinstance(item, dict)],
             triggers=[str(item) for item in data.get("triggers", [])],
+            guards=[str(item) for item in data.get("guards", [])],
             actions=[str(item) for item in data.get("actions", [])],
             owning_component_id=str(data.get("owning_component_id", "")),
             generated_by=str(data.get("generated_by", "")),
             approval_status=str(data.get("approval_status", "")),
+            provider=str(data.get("provider", "")),
+            model=str(data.get("model", "")),
+            prompt_hash=str(data.get("prompt_hash", "")),
+            proposal_id=str(data.get("proposal_id", "")),
+            referenced_requirement_ids=[str(item) for item in data.get("referenced_requirement_ids", [])],
+            referenced_parameter_ids=[str(item) for item in data.get("referenced_parameter_ids", [])],
+            referenced_physical_model_ids=[str(item) for item in data.get("referenced_physical_model_ids", [])],
+            source_provenance_ids=[str(item) for item in data.get("source_provenance_ids", [])],
+            approval_decision=dict(data.get("approval_decision", {})) if isinstance(data.get("approval_decision"), dict) else {},
         )
 
 

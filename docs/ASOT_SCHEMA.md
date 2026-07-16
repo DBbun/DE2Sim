@@ -112,14 +112,27 @@ Behaviors add:
 
 - `behavior_type`
 - `states`
+- `transitions`
 - `triggers`
+- `guards`
 - `actions`
 - `owning_component_id`
 - `generated_by`
 - `approval_status`
+- `provider`
+- `model`
+- `prompt_hash`
+- `proposal_id`
+- `referenced_requirement_ids`
+- `referenced_parameter_ids`
+- `referenced_physical_model_ids`
+- `source_provenance_ids`
+- `approval_decision`
 
-Supported `approval_status` values are `not_required`, `pending`, `approved`,
-and `rejected`.
+Supported ASOT behavior `approval_status` values are `not_required`, `pending`,
+`approved`, and `rejected`. Phase 4A proposal files additionally support
+`proposed` and `needs_revision`, but only approved proposals are copied into a
+new ASOT.
 
 Geometry records add:
 

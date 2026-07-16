@@ -1,5 +1,53 @@
 # DE2Sim Architecture
 
+## Phase 4A Scope
+
+Phase 4A adds AI-assisted behavior proposals, local human review, and explicit
+approval decisions. It does not implement simulations, Godot export, or
+automatic approval of generated content.
+
+Phase 4A adds:
+
+- `de2sim/behaviors/`
+- `de2sim/visualization/behavior_review.py`
+- `--propose-behaviors`
+- `--ai-provider offline|openai|anthropic`
+- `--apply-behavior-decisions PATH_TO_JSON`
+- `behavior_prompt.json`
+- `behavior_proposals.json`
+- `behavior_review.html`
+- `behavior_generation_report.json`
+- `behavior_decisions.json`
+- `asot_with_approved_behaviors.json`
+- `behavior_approval_report.json`
+
+`--propose-behaviors` automatically performs secure ZIP ingestion, artifact
+parsing, ASOT construction, ASOT validation, provenance construction,
+traceability validation, and proposal generation:
+
+```text
+python -m de2sim.cli.challenge_pipeline --engineering-package package.zip --output out --propose-behaviors
+```
+
+The default provider is `offline`, which creates deterministic demonstration
+candidates from explicit ASOT requirements, parameters, physical models, source
+provenance, and existing source-derived behaviors. Offline candidates are
+labeled `generated_by = "offline_template"` and are not described as
+generative-AI output.
+
+The standalone `behavior_review.html` uses native SVG and local JavaScript only.
+It allows a reviewer to download decisions JSON. The browser does not modify
+`asot.json`; decisions must be applied through the CLI:
+
+```text
+python -m de2sim.cli.challenge_pipeline --output out --apply-behavior-decisions out/behavior_decisions.json
+```
+
+Only approved proposals enter `asot_with_approved_behaviors.json`. Rejected and
+needs-revision proposals remain in the approval report. Existing source-derived
+behaviors are preserved, and proposed behavior content is never executed or
+evaluated.
+
 ## Phase 3C Scope
 
 Phase 3C improves the interactive ASOT traceability viewer without changing
@@ -178,7 +226,15 @@ de2sim/
     manifest.py
   visualization/
     __init__.py
+    behavior_review.py
     traceability_viewer.py
+  behaviors/
+    __init__.py
+    approval.py
+    prompt_builder.py
+    proposal_generator.py
+    providers.py
+    schema.py
 tests/
   __init__.py
   test_asot_builder.py
@@ -357,9 +413,8 @@ full provenance/source view.
 
 ## Preserved Boundaries
 
-Phase 3A intentionally does not implement:
+Phase 4A intentionally does not implement:
 
-- AI behavior generation
 - simulation generation
 - Godot export
 - packaging
