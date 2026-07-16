@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import json
+import re
+import shutil
 import struct
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -10,7 +13,7 @@ import zipfile
 from de2sim.asot.builder import build_asot_from_files
 from de2sim.demo.geometry_package import build_geometry_package, demo_uas_stl
 from de2sim.demo.package import build_demo_package
-from de2sim.geometry.pipeline import validate_geometry_extraction, write_geometry_outputs
+from de2sim.geometry.pipeline import render_geometry_viewer, validate_geometry_extraction, write_geometry_outputs
 from de2sim.geometry.stl import STLParseError, STLParseOptions, parse_stl
 from de2sim.ingest.artifact_parser import parse_artifacts_from_manifest
 from de2sim.ingest.package_reader import ingest_engineering_package
@@ -20,6 +23,53 @@ from tests.test_demo_package import make_demo_inputs
 
 def read_json(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def executable_scripts(html: str) -> list[str]:
+    scripts = []
+    for match in re.finditer(r"<script([^>]*)>(.*?)</script>", html, flags=re.IGNORECASE | re.DOTALL):
+        attrs = match.group(1).lower()
+        if 'type="application/json"' not in attrs and "type='application/json'" not in attrs:
+            scripts.append(match.group(2))
+    return scripts
+
+
+def embedded_json_payload(html: str, script_id: str) -> dict:
+    match = re.search(
+        rf'<script[^>]*id="{re.escape(script_id)}"[^>]*type="application/json"[^>]*>(.*?)</script>',
+        html,
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+    if not match:
+        raise AssertionError(f"missing JSON script: {script_id}")
+    return json.loads(match.group(1))
+
+
+def assert_no_raw_newline_in_js_string(testcase: unittest.TestCase, script: str) -> None:
+    quote = ""
+    escaped = False
+    for index, char in enumerate(script):
+        if quote:
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == quote:
+                quote = ""
+            elif char in "\r\n":
+                testcase.fail(f"raw newline inside JavaScript string literal at character {index}")
+        elif char in ("'", '"'):
+            quote = char
+    testcase.assertFalse(quote, "unterminated JavaScript string literal")
+
+
+def assert_node_check_passes_if_available(testcase: unittest.TestCase, script: str, root: Path) -> None:
+    if not shutil.which("node"):
+        return
+    script_path = root / "geometry_viewer_executable.js"
+    script_path.write_text(script, encoding="utf-8", newline="\n")
+    completed = subprocess.run(["node", "--check", str(script_path)], capture_output=True, text=True, check=False)
+    testcase.assertEqual(completed.returncode, 0, completed.stderr)
 
 
 class GeometryPhase6CTests(unittest.TestCase):
@@ -91,6 +141,22 @@ class GeometryPhase6CTests(unittest.TestCase):
             self.assertIn("Demonstration CAD-export mesh - not vendor-authoritative vehicle geometry.", viewer)
             for bad in ("src=\"http", "href=\"http", "eval(", "Function(", "innerHTML", "fetch("):
                 self.assertNotIn(bad, viewer)
+            scene = embedded_json_payload(viewer, "geometry-scene")
+            self.assertEqual(scene["source_geometry_id"], "geometry-442731f9c74c1b85")
+            self.assertEqual(scene["facet_count"], 164)
+            self.assertEqual(scene["dimensions"], {"x": 1.2, "y": 1.2, "z": 0.24})
+            self.assertEqual(scene["source_hash"], "a480ea2f2c1951975008d48747d41bc6f7b65fa2483f2033b38801fe2c144ea1")
+            scripts = executable_scripts(viewer)
+            self.assertEqual(len(scripts), 1)
+            assert_no_raw_newline_in_js_string(self, scripts[0])
+            assert_node_check_passes_if_available(self, scripts[0], root)
+            self.assertIn('let mode="solid",rx=-0.6,ry=0.7,zoom=2.4', scripts[0])
+            self.assertNotIn('getContext("webgl")', scripts[0])
+            self.assertIn('getContext("2d")', scripts[0])
+            self.assertIn("requestAnimationFrame(draw)", scripts[0])
+            self.assertIn('document.getElementById("solid").classList.add("active");draw();', scripts[0])
+            for control in ("fit", "solid", "wire", "box", "front", "side", "top", "reset"):
+                self.assertIn(f'id="{control}"', viewer)
 
             asot_path = root / "out" / "approved.json"
             asot["behaviors"] = [
@@ -111,6 +177,39 @@ class GeometryPhase6CTests(unittest.TestCase):
             sim = run_simulation_build(asot_path, root / "sim")
             self.assertEqual(read_json(sim["simulation_inputs"])["geometry_id"], extraction["geometry_id"])
             self.assertFalse(read_json(sim["simulation_model"])["geometry_used_for_flight_dynamics"])
+
+    def test_geometry_viewer_serializes_embedded_scene_safely(self) -> None:
+        scene = {
+            "schema_version": "de2sim.geometry_scene.v1",
+            "source_geometry_id": "geometry-test",
+            "display_classification": 'quote " backslash \\ newline \n unicode \u2028 end </script><script>alert(1)</script>',
+            "vertices": [[0, 0, 0], [1, 0, 0], [0, 1, 0]],
+            "triangles": [[0, 1, 2]],
+            "bounding_box": {"min": {"x": 0, "y": 0, "z": 0}, "max": {"x": 1, "y": 1, "z": 0}},
+            "center": {"x": 0.5, "y": 0.5, "z": 0},
+            "dimensions": {"x": 1, "y": 1, "z": 0},
+            "unit": "m",
+            "source_format": "ascii_stl",
+            "source_hash": "hash",
+            "facet_count": 1,
+            "linked_asot_ids": {"component": "component", "physical_model": "model", "parameters": {"x": "px", "y": "py", "z": "pz"}},
+            "provenance_ids": ["prov"],
+            "validation": {"status": "passed", "errors": []},
+            "authoritativeness": "not_vendor_authoritative",
+            "limitations": ["line one\nline two", 'quote " and slash \\', "closing </script> marker"],
+        }
+        html = render_geometry_viewer(scene)
+        self.assertNotIn("</script><script>alert(1)", html)
+        self.assertEqual(html.lower().count("</script>"), 2)
+        self.assertIn("<\\/script>", html)
+        embedded = embedded_json_payload(html, "geometry-scene")
+        self.assertEqual(embedded["display_classification"], scene["display_classification"])
+        self.assertEqual(embedded["limitations"], scene["limitations"])
+        scripts = executable_scripts(html)
+        self.assertEqual(len(scripts), 1)
+        assert_no_raw_newline_in_js_string(self, scripts[0])
+        with tempfile.TemporaryDirectory() as tmp:
+            assert_node_check_passes_if_available(self, scripts[0], Path(tmp))
 
     def test_demo_package_includes_geometry_card_and_source_stl(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
