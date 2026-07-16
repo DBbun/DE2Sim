@@ -58,12 +58,11 @@ class TraceabilityViewerCLITests(unittest.TestCase):
             self.assertGreater(viewer_data["metrics"]["traceability_percentage"], 0.0)
         self.assertEqual(LEGACY_SCRIPT.read_bytes(), before)
 
-    def test_version_reports_phase3b(self) -> None:
+    def test_version_reports_phase3c(self) -> None:
         result = self.run_cli("--version")
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("DE2Sim v0.3.1-phase3b", result.stdout)
+        self.assertIn("DE2Sim v0.3.2-phase3c", result.stdout)
 
 
 if __name__ == "__main__":
     unittest.main()
-

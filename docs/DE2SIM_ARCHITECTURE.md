@@ -1,5 +1,28 @@
 # DE2Sim Architecture
 
+## Phase 3C Scope
+
+Phase 3C improves the interactive ASOT traceability viewer without changing
+pipeline behavior, ASOT construction, provenance construction, or the legacy
+DBbun script.
+
+Phase 3C adds viewer polish only:
+
+- deterministic collapsed layered graph layout
+- automatic visible-node bounds calculation and fit-to-canvas behavior
+- `Fit graph`, zoom in, zoom out, reset, wheel zoom, and drag pan controls
+- larger readable labels, safe tooltip text, node legend, node-type colors,
+  deterministic node shapes, directional edge markers, and selection fading
+- `Show engineering only` and `Show traceability` modes
+- clearer details-panel sections and explicit `No source evidence available`
+  messaging
+- package-scoped wording: `Traceability coverage for this processed package`
+- responsive three-panel layout with independently scrolling side panels
+
+Phase 3C does not implement AI behavior generation, simulation generation,
+Godot export, ZIP deployment packaging, exact replayability, CAD parsing, or
+field-complete provenance.
+
 ## Phase 3B Scope
 
 Phase 3B adds a standalone interactive ASOT traceability viewer. It remains
@@ -318,6 +341,19 @@ relationship graph, entity details, source evidence, search and filters,
 traceability summary, traceability gaps, and explicit limitations. It uses no
 external assets or libraries and does not execute or evaluate uploaded source
 content.
+
+## Phase 3C Behavior
+
+The Phase 3C viewer keeps the Phase 3B data model and relationship rules but
+uses the central graph canvas more effectively. It calculates visible graph
+bounds on initial load and after filtering, fits the active graph into the SVG
+viewport, supports zoom and pan controls, and highlights direct relationships
+on hover or selection while fading unrelated graph elements.
+
+The navigation panel filters by category and `System Overview` restores all
+entity types. `Show engineering only` hides provenance and source-file nodes
+without inventing replacement relationships; `Show traceability` restores the
+full provenance/source view.
 
 ## Preserved Boundaries
 

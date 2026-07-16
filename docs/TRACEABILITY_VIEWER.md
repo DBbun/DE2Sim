@@ -1,6 +1,6 @@
 # DE2Sim ASOT Traceability Viewer
 
-Phase 3B adds a standalone, dependency-free ASOT traceability viewer:
+Phase 3C polishes the standalone, dependency-free ASOT traceability viewer:
 
 ```text
 python -m de2sim.cli.challenge_pipeline --engineering-package package.zip --output out --build-viewer
@@ -18,6 +18,49 @@ It writes:
 The HTML file embeds the same normalized data as `viewer_data.json` and opens
 locally by double-clicking. It does not require a web server, external scripts,
 stylesheets, fonts, images, APIs, CDNs, or network access.
+
+## Phase 3C Viewer Layout
+
+The interactive graph uses deterministic layered SVG layout:
+
+- source files
+- provenance records
+- components
+- interfaces and behaviors
+- parameters, requirements, physical models, and geometry
+
+Empty layers are collapsed. On initial load and after search, filtering, or
+category changes, the viewer calculates the visible node bounds and fits the
+graph into the central SVG canvas. The toolbar includes zoom in, zoom out,
+reset, and a clearly labeled `Fit graph` control. Mouse-wheel zoom and
+drag-to-pan are supported, with pan bounds clamped so the graph cannot be lost
+permanently outside the viewport.
+
+The graph uses larger readable labels, deterministic node shapes, directional
+edge markers, relationship-specific edge classes, hover tooltips, direct-edge
+highlighting, and selection fading for unrelated nodes and edges. Long labels
+are visually truncated in the graph but remain available in the native tooltip,
+safe hover tooltip, and entity details panel.
+
+The three-panel layout gives the navigation panel roughly 15% of the width,
+the graph roughly 60%, and the details panel roughly 25% on common desktop
+viewports. Side panels scroll independently while the graph remains fixed.
+
+## Navigation and Modes
+
+Category navigation filters to the selected entity type. `System Overview`
+restores all entity types and keeps category counts visible. The selected
+category remains highlighted.
+
+`Show engineering only` hides provenance and source-file nodes and their
+traceability edges while preserving existing engineering-to-engineering
+relationships. `Show traceability` restores provenance and source-file nodes
+and edges. Existing search, precision filtering, warning filtering, and type
+filters are preserved.
+
+The traceability metric is labeled explicitly as `Traceability coverage for
+this processed package`; it is not presented as a general Challenge II
+compliance claim.
 
 ## Viewer Data
 
@@ -62,6 +105,7 @@ The viewer:
 
 - renders dynamic values with safe DOM text assignment
 - does not use `eval`, `exec`, `Function()`, or dynamic script construction
+- does not use `document.write`
 - does not execute source content
 - does not evaluate equations
 - does not load external URLs
@@ -78,4 +122,3 @@ The viewer:
 - no Godot export yet
 - whole-file provenance is not field-level provenance
 - no exact replayability claim
-

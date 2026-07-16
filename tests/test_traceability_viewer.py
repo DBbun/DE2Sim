@@ -70,6 +70,44 @@ class TraceabilityViewerTests(unittest.TestCase):
         self.assertIn("entity-provenance", relationships)
         self.assertIn("provenance-source-file", relationships)
 
+    def test_phase3c_deterministic_layered_layout_bounds_and_shapes(self) -> None:
+        asot, provenance, report = self.build_bundle()
+        data = build_viewer_data(asot, provenance, report)
+        by_type = {}
+        for node in data["nodes"]:
+            by_type.setdefault(node["entity_type"], []).append(node)
+
+        self.assertEqual({node["layout"]["layer"] for node in by_type["source_file"]}, {1})
+        self.assertEqual({node["layout"]["layer"] for node in by_type["provenance"]}, {2})
+        self.assertEqual({node["layout"]["layer"] for node in by_type["component"]}, {3})
+        self.assertTrue({node["layout"]["layer"] for node in by_type["interface"]}.issubset({4}))
+        self.assertTrue({node["layout"]["layer"] for node in by_type["behavior"]}.issubset({4}))
+        self.assertTrue({node["layout"]["layer"] for node in by_type["parameter"]}.issubset({5}))
+        self.assertTrue({node["layout"]["layer"] for node in by_type["requirement"]}.issubset({5}))
+        self.assertTrue({node["layout"]["layer"] for node in by_type["physical_model"]}.issubset({5}))
+        self.assertTrue({node["layout"]["layer"] for node in by_type["geometry"]}.issubset({5}))
+
+        shapes = {node["entity_type"]: node["layout"]["shape"] for node in data["nodes"]}
+        self.assertEqual(shapes["component"], "rounded-rect")
+        self.assertEqual(shapes["requirement"], "rect")
+        self.assertEqual(shapes["parameter"], "capsule")
+        self.assertEqual(shapes["behavior"], "hex")
+        self.assertEqual(shapes["physical_model"], "document")
+        self.assertEqual(shapes["geometry"], "diamond")
+        self.assertEqual(shapes["provenance"], "circle")
+        self.assertEqual(shapes["source_file"], "folder")
+
+        min_x = min(node["layout"]["x"] - node["layout"]["width"] / 2 for node in data["nodes"])
+        max_x = max(node["layout"]["x"] + node["layout"]["width"] / 2 for node in data["nodes"])
+        min_y = min(node["layout"]["y"] - node["layout"]["height"] / 2 for node in data["nodes"])
+        max_y = max(node["layout"]["y"] + node["layout"]["height"] / 2 for node in data["nodes"])
+        self.assertLess(min_x, max_x)
+        self.assertLess(min_y, max_y)
+        self.assertGreater(max_x - min_x, 900)
+        self.assertGreater(max_y - min_y, 300)
+        self.assertTrue(all(node["layout"]["width"] >= 96 for node in data["nodes"]))
+        self.assertTrue(all(node["layout"]["height"] >= 52 for node in data["nodes"]))
+
     def test_explicit_relationships_only_and_no_invented_edges(self) -> None:
         asot, provenance, report = self.build_bundle()
         data = build_viewer_data(asot, provenance, report)
@@ -115,7 +153,63 @@ class TraceabilityViewerTests(unittest.TestCase):
         self.assertNotIn("eval(", html)
         self.assertNotIn("exec(", html)
         self.assertNotIn("Function(", html)
+        self.assertNotIn("document.write", html)
         self.assertNotIn("innerHTML", html)
+
+    def test_phase3c_html_controls_styles_and_interactions_are_present(self) -> None:
+        asot, provenance, report = self.build_bundle()
+        html = render_viewer_html(build_viewer_data(asot, provenance, report))
+
+        for text in (
+            "Fit graph",
+            "Show engineering only",
+            "Show traceability",
+            "Graph legend",
+            "Traceability coverage for this processed package",
+            "No source evidence available",
+        ):
+            self.assertIn(text, html)
+
+        for css in (
+            "grid-template-columns:minmax(190px,15%) minmax(640px,60%) minmax(320px,25%)",
+            ".node-type-component",
+            ".node-type-requirement",
+            ".node-type-interface",
+            ".node-type-parameter",
+            ".node-type-physical-model",
+            ".node-type-behavior",
+            ".node-type-geometry",
+            ".node-type-provenance",
+            ".node-type-source-file",
+            ".edge-rel-requirement-satisfied-by",
+            ".edge.is-highlighted",
+            ".edge.is-faded,.node.is-faded",
+            ".tooltip",
+            "font-size:15px",
+            "overflow-wrap:anywhere",
+        ):
+            self.assertIn(css, html)
+
+        for script in (
+            "function fitGraph()",
+            "function graphBounds(nodes)",
+            "function addShape(group,node)",
+            "function showTooltip(evt,node)",
+            "function keepGraphReachable()",
+            'marker-end:url(#arrow-default)',
+            'id:"arrow-default"',
+            'id:"arrow-highlight"',
+            'svg.addEventListener("wheel"',
+            'svg.addEventListener("pointerdown"',
+            'svg.addEventListener("pointermove"',
+            'document.getElementById("engineeringOnly").addEventListener("click"',
+            'document.getElementById("showTraceability").addEventListener("click"',
+            'state.category=name',
+            'name==="System Overview"',
+            'details");const summary=document.createElement("summary");txt(summary,"Raw fields")',
+            'txt(ps,"Provenance records")',
+        ):
+            self.assertIn(script, html)
 
     def test_source_text_escaping_truncation_and_no_unrelated_absolute_paths(self) -> None:
         asot, provenance, report = self.build_bundle()
@@ -142,4 +236,3 @@ class TraceabilityViewerTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

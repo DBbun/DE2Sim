@@ -23,7 +23,7 @@ _PHASE0_MESSAGE = (
     "DE2Sim Phase 0 scaffold is installed, but engineering-package ingestion "
     "is not implemented yet."
 )
-_CLI_VERSION = "0.3.1-phase3b"
+_CLI_VERSION = "0.3.2-phase3c"
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -76,7 +76,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     if args.version:
-        print(f"DE2Sim v{_CLI_VERSION} (supersedes DE2Sim v0.3.0-phase3a; supersedes DE2Sim v0.2.0-phase2b)")
+        print(f"DE2Sim v{_CLI_VERSION} (supersedes DE2Sim v0.3.1-phase3b; supersedes DE2Sim v0.3.0-phase3a; supersedes DE2Sim v0.2.0-phase2b)")
         return 0
 
     if not args.engineering_package:
