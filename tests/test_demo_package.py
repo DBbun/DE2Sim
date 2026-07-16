@@ -15,6 +15,21 @@ from de2sim.behaviors.providers import AnthropicProvider, OpenAIProvider
 from tests.test_simulation_adapter import approved_asot
 
 
+CHALLENGE_TITLE = "Army Training Verse — Challenge II: Intelligent Simulation Pipeline"
+CHALLENGE_INTRODUCTION = (
+    "DE2Sim demonstrates an end-to-end Challenge II pipeline that transforms "
+    "standards-based digital-engineering artifacts into a validated ASOT, "
+    "human-approved AI-assisted behavior, and executable low- and high-fidelity "
+    "simulation outputs."
+)
+REVIEWER = "Uri Kartoun, PhD — Founder, DBbun LLC"
+REVIEW_COMMENT = (
+    "Reviewed the local-AI behavior enrichment against the ASOT requirements, "
+    "parameters, provenance, state transitions, and low-battery return logic. "
+    "Approved for inclusion in the demonstration ASOT."
+)
+
+
 class _FakeHTTPResponse:
     def __init__(self, payload: dict) -> None:
         self.payload = json.dumps(payload).encode("utf-8")
@@ -110,8 +125,8 @@ def make_demo_inputs(root: Path, external_ai: bool = False, local_ai: bool = Fal
         "traceability_report.json": {"valid": True, "coverage_summary": {"traceability_percentage": 100.0}},
         "behavior_prompt.json": {"schema_version": "de2sim.behavior_prompt.v1", "prompt_hash": prompt_hash, "prompt": {"safe": True}},
         "behavior_proposals.json": {"schema_version": "de2sim.behavior_proposals.v1", "asot_id": asot["asot_id"], "provider": "ollama" if local_ai else "openai" if external_ai else "offline", "model": "gemma3:4b" if local_ai else "gpt-test" if external_ai else "deterministic-uas-template-v1", "prompt_hash": prompt_hash, "generated_at_utc": "2026-01-01T00:00:00Z", "external_call_metadata": {"actual_external_api_call_occurred": external_ai, "actual_local_model_inference_occurred": local_ai, "request_hash": request_hash, "response_hash": response_hash, "local_endpoint": "loopback_only" if local_ai else "", "evidence_status": "confirmed_local_generation" if local_ai else "", "generation_mode": generation_mode if local_ai else "", "enrichment_hash": enrichment_hash if local_ai else "", "enrichment_completeness": "partial" if local_ai else "", "generated_field_count": 1 if local_ai else 0, "generated_character_count": 8 if local_ai else 0, "generated_json_paths": generated_json_paths if local_ai else [], "omitted_or_empty_json_paths": omitted_or_empty_json_paths if local_ai else [], "normalized_enrichment_hash": normalized_enrichment_hash if local_ai else "", "ai_contribution_manifest": contribution_manifest if local_ai else {}} if (external_ai or local_ai) else {}, "proposals": [{**copy.deepcopy(behavior), "proposal_id": proposal_id, "generated_by": "local_generative_ai" if local_ai else "external_generative_ai" if external_ai else "offline_template", "provider": "ollama" if local_ai else "openai" if external_ai else "offline", "model": "gemma3:4b" if local_ai else "gpt-test" if external_ai else "deterministic-uas-template-v1", "prompt_hash": prompt_hash, "response_hash": response_hash if (external_ai or local_ai) else "", "request_hash": request_hash if (external_ai or local_ai) else "", "actual_external_api_call_occurred": external_ai, "actual_local_model_inference_occurred": local_ai, "evidence_status": "confirmed_local_generation" if local_ai else "", "local_endpoint": "loopback_only" if local_ai else "", "generation_mode": generation_mode if local_ai else "", "enrichment_hash": enrichment_hash if local_ai else "", "enrichment_completeness": "partial" if local_ai else "", "generated_field_count": 1 if local_ai else 0, "generated_character_count": 8 if local_ai else 0, "generated_json_paths": generated_json_paths if local_ai else [], "omitted_or_empty_json_paths": omitted_or_empty_json_paths if local_ai else [], "normalized_enrichment_hash": normalized_enrichment_hash if local_ai else "", "ai_contribution_manifest": contribution_manifest if local_ai else {}, "validated_proposal_hash": "validated-abc" if local_ai else ""}]},
-        "behavior_decisions.json": {"schema_version": "de2sim.behavior_decisions.v1", "decisions": [{"proposal_id": proposal_id, "approval_status": "approved", "decided_at_utc": "2026-01-01T00:00:00Z"}]},
-        "behavior_approval_report.json": {"valid": True, "approved_count": 1, "skipped_count": 0, "errors": [], "warnings": [], "decisions": [{"proposal_id": proposal_id, "approval_status": "approved"}]},
+        "behavior_decisions.json": {"schema_version": "de2sim.behavior_decisions.v1", "decisions": [{"proposal_id": proposal_id, "approval_status": "approved", "reviewer": REVIEWER, "comment": REVIEW_COMMENT, "decided_at_utc": "2026-01-01T00:00:00Z"}]},
+        "behavior_approval_report.json": {"valid": True, "approved_count": 1, "skipped_count": 0, "errors": [], "warnings": [], "decisions": [{"proposal_id": proposal_id, "approval_status": "approved", "reviewer": REVIEWER, "comment": REVIEW_COMMENT, "decided_at_utc": "2026-01-01T00:00:00Z"}]},
         "asot_with_approved_behaviors.json": asot,
     }.items():
         _write_json(behavior_dir / name, payload)
@@ -189,6 +204,8 @@ class DemoPackageTests(unittest.TestCase):
             self.assertEqual(first["zip"].read_bytes(), second["zip"].read_bytes())
             dashboard = first["dashboard"].read_text(encoding="utf-8")
             self.assertIn("Nine-Stage Pipeline", dashboard)
+            self.assertIn(CHALLENGE_TITLE, dashboard)
+            self.assertIn(CHALLENGE_INTRODUCTION, dashboard)
             self.assertNotIn("Eight-Stage Pipeline", dashboard)
             for stage in (
                 "Engineering Package",
@@ -217,6 +234,8 @@ class DemoPackageTests(unittest.TestCase):
             self.assertIn("Approved behavior stable ID", dashboard)
             self.assertIn("Approval status", dashboard)
             self.assertIn("Decision timestamp", dashboard)
+            self.assertIn(REVIEWER, dashboard)
+            self.assertIn(REVIEW_COMMENT, dashboard)
             self.assertIn("2026-01-01T00:00:00Z", dashboard)
             self.assertIn("Low fidelity", dashboard)
             self.assertIn("High fidelity", dashboard)
@@ -238,8 +257,34 @@ class DemoPackageTests(unittest.TestCase):
             self.assertNotIn("JSON.stringify(data.requirements", dashboard)
             self.assertIn("viewers/simulation_viewer.html", dashboard)
             self.assertNotIn("C:\\", dashboard)
+            for bad_claim in ("Challenge I:", "Challenge I -", "Challenge I —", "Challenge III", "Challenge IV", "Army approval", "government approval", "external approval", "independent approval"):
+                self.assertNotIn(bad_claim, dashboard)
             for bad in ("src=\"http", "href=\"http", "<link", "eval(", "Function(", "document.write", "fetch("):
                 self.assertNotIn(bad, dashboard)
+            for rel in ("reports/challenge_alignment.md", "reports/technical_summary.md", "reports/demo_script.md"):
+                text = (first["package_root"] / rel).read_text(encoding="utf-8")
+                self.assertIn(CHALLENGE_TITLE, text)
+                self.assertIn(CHALLENGE_INTRODUCTION, text)
+                for bad_claim in ("Challenge I:", "Challenge I -", "Challenge I —", "Challenge III", "Challenge IV", "Army approval", "government approval", "external approval", "independent approval"):
+                    self.assertNotIn(bad_claim, text)
+            technical = (first["package_root"] / "reports" / "technical_summary.md").read_text(encoding="utf-8")
+            demo_script = (first["package_root"] / "reports" / "demo_script.md").read_text(encoding="utf-8")
+            self.assertIn(REVIEWER, technical)
+            self.assertIn(REVIEW_COMMENT, technical)
+            self.assertIn(REVIEWER, demo_script)
+            self.assertIn(REVIEW_COMMENT, demo_script)
+            packaged_decisions = json.loads((first["package_root"] / "artifacts" / "behavior_decisions.json").read_text(encoding="utf-8"))
+            packaged_report = json.loads((first["package_root"] / "reports" / "behavior_approval_report.json").read_text(encoding="utf-8"))
+            self.assertEqual(packaged_decisions["decisions"][0]["reviewer"], REVIEWER)
+            self.assertEqual(packaged_decisions["decisions"][0]["comment"], REVIEW_COMMENT)
+            self.assertEqual(packaged_report["decisions"][0]["reviewer"], REVIEWER)
+            self.assertEqual(packaged_report["decisions"][0]["comment"], REVIEW_COMMENT)
+            source_asot = json.loads((behavior_dir / "asot_with_approved_behaviors.json").read_text(encoding="utf-8"))
+            packaged_asot = json.loads((first["package_root"] / "artifacts" / "asot_with_approved_behaviors.json").read_text(encoding="utf-8"))
+            for section in ("components", "requirements", "interfaces", "parameters", "physical_models", "behaviors", "geometry"):
+                self.assertEqual([item["stable_id"] for item in packaged_asot.get(section, [])], [item["stable_id"] for item in source_asot.get(section, [])])
+            for rel in ("telemetry_low.csv", "telemetry_high.csv", "requirements_evaluation.json"):
+                self.assertEqual((first["package_root"] / "artifacts" / rel).read_bytes(), (simulation_dir / rel).read_bytes())
             manifest = json.loads(first["manifest"].read_text(encoding="utf-8"))
             paths = [item["relative_path"] for item in manifest["files"]]
             self.assertEqual(paths, sorted(paths))

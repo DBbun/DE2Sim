@@ -17,6 +17,13 @@ from de2sim.visualization.traceability_viewer import render_viewer_html, build_v
 DEMO_SCHEMA_VERSION = "de2sim.demo_package.v1"
 FIXED_ZIP_DT = (2026, 1, 1, 0, 0, 0)
 ROOT_NAME = "DE2Sim_Submission_Demo"
+CHALLENGE_TITLE = "Army Training Verse — Challenge II: Intelligent Simulation Pipeline"
+CHALLENGE_INTRODUCTION = (
+    "DE2Sim demonstrates an end-to-end Challenge II pipeline that transforms "
+    "standards-based digital-engineering artifacts into a validated ASOT, "
+    "human-approved AI-assisted behavior, and executable low- and high-fidelity "
+    "simulation outputs."
+)
 
 
 class DemoPackageError(Exception):
@@ -426,17 +433,30 @@ def _reports(data: dict[str, Any], cli_version: str, test_summary: str, ai: dict
     general_limitations = _general_limitations_text(ai)
     ai_limitation_note = _ai_limitations_report_text(ai)
     geometry = _geometry_summary(data)
+    approval = _approved_decision(data)
+    reviewer = _text(approval.get("reviewer")) or "not provided"
+    comment = _text(approval.get("comment")) or "not provided"
     readme = f"""# DE2Sim Submission Demo
 
 Open `demo_dashboard.html` directly or run `Launch_DE2Sim_Demo.bat` on Windows.
+
+{CHALLENGE_TITLE}
+
+{CHALLENGE_INTRODUCTION}
 
 This package is self-contained and uses relative links only. It demonstrates readable-to-runnable engineering flow through ingestion, parsing, CAD geometry transformation, ASOT, provenance, behavior approval, simulation, and requirement evidence.
 """
     tech = f"""# Technical Summary
 
+{CHALLENGE_TITLE}
+
+{CHALLENGE_INTRODUCTION}
+
 DE2Sim addresses the gap between readable engineering artifacts and runnable simulation evidence. The architecture preserves secure ingestion, deterministic artifact parsing, ASOT generation, provenance, human-in-the-loop behavior approval, and executable low/high fidelity UAS simulation.
 
 The approved behavior is `{sim['asot_facts']['approved_behavior_id']}` with sequence `preflight -> mission_flight -> return_to_base -> landed`. The low-fidelity model is a deterministic kinematic point model. The high-fidelity model is a demonstrative point-mass model, not flight-certified aerodynamics.
+
+Human review evidence: proposal `{approval.get('proposal_id', '')}` was `{approval.get('approval_status', '')}` by {reviewer} at `{approval.get('decided_at_utc', '')}`. Reviewer comment: {comment}
 
 CAD-export geometry is represented by a standards-based STL artifact. Dimensions are explicitly parameterized and validated, geometry is linked to SysML/component and physical-model evidence through an explicit sidecar, and low/high simulation model artifacts reference the same ASOT geometry entity when present. Geometry is used for visualization only; no vendor-authoritative CAD or certified flight model is claimed.
 
@@ -446,7 +466,11 @@ Determinism is supported through stable IDs, prompt hashes, deterministic JSON/C
 
 Limitations: {general_limitations}
 """
-    align = """# Challenge Alignment
+    align = f"""# Challenge Alignment
+
+{CHALLENGE_TITLE}
+
+{CHALLENGE_INTRODUCTION}
 
 ## Technical Feasibility
 Evidence: `artifacts/asot_with_approved_behaviors.json`, `artifacts/simulation_data.json`, `viewers/simulation_viewer.html`.
@@ -467,11 +491,16 @@ Evidence: traceability reports, requirement evaluation, and clear limitations.
 """
     script = f"""# 4-5 Minute Demo Script
 
+{CHALLENGE_TITLE}
+
+{CHALLENGE_INTRODUCTION}
+
 1. Problem: engineering data is readable but not immediately runnable.
 2. Engineering ZIP: open `source_package/`.
 3. Traceability: open `viewers/asot_traceability_viewer.html`.
 4. CAD geometry: open `viewers/geometry_viewer.html` when present and state it is a demonstration STL, not vendor-authoritative CAD.
 5. Behavior approval: open `viewers/behavior_review.html`.
+   Human reviewer: {reviewer}. Reviewer comment: {comment}
 6. Simulation playback: open `viewers/simulation_viewer.html`.
 7. Compare fidelities: show low/high landing reserves and timing.
 8. Requirement evidence: open `artifacts/requirements_evaluation.json`.
@@ -570,14 +599,13 @@ def _dashboard(data: dict[str, Any], ai: dict[str, Any]) -> str:
         ),
         {},
     )
-    approved_decision = next(
-        (item for item in data["behavior_decisions"].get("decisions", []) if item.get("approval_status") == "approved"),
-        {},
-    )
+    approved_decision = _approved_decision(data)
     coverage = data["traceability_report"].get("coverage_summary", {}) if isinstance(data["traceability_report"].get("coverage_summary"), dict) else {}
     geometry_card = _geometry_card(data)
     dash = {
         "title": sim["asot_facts"]["title"],
+        "challenge_title": CHALLENGE_TITLE,
+        "challenge_introduction": CHALLENGE_INTRODUCTION,
         "approved_behavior_id": sim["asot_facts"]["approved_behavior_id"],
         "sequence": "preflight -> mission_flight -> return_to_base -> landed",
         "status": sim["simulation_status"],
@@ -598,6 +626,8 @@ def _dashboard(data: dict[str, Any], ai: dict[str, Any]) -> str:
             "approved_behavior_id": approved_behavior.get("stable_id", ""),
             "approval_status": approved_decision.get("approval_status", ""),
             "decision_timestamp": approved_decision.get("decided_at_utc", ""),
+            "reviewer": approved_decision.get("reviewer", ""),
+            "comment": approved_decision.get("comment", ""),
             "artifact": "artifacts/behavior_decisions.json",
         },
         "general_limitations": _general_limitations_text(ai),
@@ -629,6 +659,17 @@ def _dashboard(data: dict[str, Any], ai: dict[str, Any]) -> str:
     }
     text = json.dumps(dash, sort_keys=True, ensure_ascii=False).replace("</", "<\\/")
     return _HTML.replace("__DASHBOARD_DATA__", text)
+
+
+def _approved_decision(data: dict[str, Any]) -> dict[str, Any]:
+    return next(
+        (
+            item
+            for item in data["behavior_decisions"].get("decisions", [])
+            if isinstance(item, dict) and item.get("approval_status") == "approved"
+        ),
+        {},
+    )
 
 
 def _artifact_links(geometry_card: dict[str, Any]) -> list[list[str]]:
@@ -899,7 +940,7 @@ _HTML = """<!doctype html>
 </style>
 </head>
 <body>
-<header><h1>DBbun / DE2Sim</h1><div class="tag">readable -&gt; runnable integrated demonstration package</div></header>
+<header><h1>DBbun / DE2Sim</h1><div class="tag" id="challenge-title"></div><p id="challenge-introduction"></p></header>
 <main class="wrap">
 <section><h2>Nine-Stage Pipeline</h2><div class="pipeline" id="pipeline"></div></section>
 <section><h2>Status Cards</h2><div class="grid" id="cards"></div></section>
@@ -912,6 +953,8 @@ _HTML = """<!doctype html>
 const data=JSON.parse(document.getElementById("dashboard-data").textContent);
 function txt(el,v){el.textContent=v==null?"":String(v)}
 function add(tag,parent,cls){const el=document.createElement(tag);if(cls)el.className=cls;parent.appendChild(el);return el}
+txt(document.getElementById("challenge-title"),data.challenge_title);
+txt(document.getElementById("challenge-introduction"),data.challenge_introduction);
 ["Engineering Package","Parsed Artifacts","CAD Geometry Transformation","ASOT","Provenance and Traceability","Behavior Proposal","Human Approval","Executable Simulation","Requirement Evidence"].forEach(s=>txt(add("div",document.getElementById("pipeline"),"stage"),s));
 const cards=document.getElementById("cards");
 function card(title,body,cls){const c=add("div",cards,"card");txt(add("h2",c),title);const p=add("div",c,"card-body "+(cls||""));txt(p,body);return c}
@@ -921,7 +964,7 @@ card("ASOT Validation",(data.asot_validation.passed?"PASSED":"FAILED")+"\\nError
 card("Provenance Coverage","Coverage: "+data.provenance.coverage_percentage+"%\\nProvenance: "+data.provenance.provenance_manifest+"\\nTraceability: "+data.provenance.traceability_report,"ok");
 if(data.geometry&&data.geometry.available){card("CAD/Geometry Integration","source format: "+data.geometry.source_format+"\\nsource classification: "+data.geometry.source_classification+"\\nauthoritativeness: "+data.geometry.authoritativeness+"\\nfacet count: "+data.geometry.facet_count+"\\ndimensions: "+data.geometry.dimensions+"\\nunits: "+data.geometry.unit+"\\nparametric dimension validation: "+data.geometry.validation_status+"\\nlinked ASOT geometry ID: "+data.geometry.geometry_id+"\\nlinked component ID: "+data.geometry.component_id+"\\nlinked physical-model ID: "+data.geometry.physical_model_id+"\\nsource hash: "+data.geometry.source_hash+"\\ngeometry viewer link: "+data.geometry.viewer,"ok");}
 card("Approved Behavior",data.approved_behavior_id+"\\n"+data.sequence,"ok");
-card("Human Approval","Approved proposal ID: "+(data.human_approval.approved_proposal_id||"not available")+"\\nApproved behavior stable ID: "+data.human_approval.approved_behavior_id+"\\nApproval status: "+data.human_approval.approval_status+"\\nDecision timestamp: "+(data.human_approval.decision_timestamp||"not available"),"ok");
+card("Human Approval","Approved proposal ID: "+(data.human_approval.approved_proposal_id||"not available")+"\\nApproved behavior stable ID: "+data.human_approval.approved_behavior_id+"\\nApproval status: "+data.human_approval.approval_status+"\\nDecision timestamp: "+(data.human_approval.decision_timestamp||"not available")+"\\nReviewer: "+(data.human_approval.reviewer||"not provided")+"\\nComment: "+(data.human_approval.comment||"not provided"),"ok");
 card("Low-Fidelity Result","mission completed: "+data.status.low.mission_completed+"\\nreserve: "+data.status.low.battery_reserve_at_landing_percent+"%","ok");
 card("High-Fidelity Result","mission completed: "+data.status.high.mission_completed+"\\nreserve: "+data.status.high.battery_reserve_at_landing_percent+"%","ok");
 card("Scenario Feasibility",data.status.low.scenario_feasibility_status+" / "+data.status.high.scenario_feasibility_status,"ok");

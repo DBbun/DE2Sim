@@ -28,6 +28,36 @@ class BehaviorApprovalTests(unittest.TestCase):
         self.assertEqual(decisions["decisions"][0]["approval_status"], "approved")
         self.assertTrue(report["valid"])
 
+    def test_reviewer_and_comment_survive_decision_application(self) -> None:
+        reviewer = "Uri Kartoun, PhD — Founder, DBbun LLC"
+        comment = (
+            "Reviewed the local-AI behavior enrichment against the ASOT requirements, "
+            "parameters, provenance, state transitions, and low-battery return logic. "
+            "Approved for inclusion in the demonstration ASOT."
+        )
+        document, decisions, report = apply_behavior_decisions(
+            self.asot,
+            self.proposals,
+            {
+                "decisions": [
+                    {
+                        "proposal_id": self.proposal_id,
+                        "approval_status": "approved",
+                        "reviewer": reviewer,
+                        "comment": comment,
+                        "decided_at_utc": "2026-07-16T18:35:17Z",
+                    }
+                ]
+            },
+        )
+        approved = next(item for item in document.to_dict()["behaviors"] if item.get("proposal_id") == self.proposal_id)
+        self.assertEqual(decisions["decisions"][0]["reviewer"], reviewer)
+        self.assertEqual(decisions["decisions"][0]["comment"], comment)
+        self.assertEqual(report["decisions"][0]["reviewer"], reviewer)
+        self.assertEqual(report["decisions"][0]["comment"], comment)
+        self.assertEqual(approved["approval_decision"]["reviewer"], reviewer)
+        self.assertEqual(approved["approval_decision"]["comment"], comment)
+
     def test_rejected_and_needs_revision_do_not_enter_asot(self) -> None:
         for status in ("rejected", "needs_revision"):
             document, _decisions, report = apply_behavior_decisions(
