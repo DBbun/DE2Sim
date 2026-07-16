@@ -10,6 +10,7 @@ from typing import Sequence
 from de2sim.asot.builder import ASOTBuildError, build_asot_from_files, load_json, write_asot_outputs
 from de2sim.behaviors.approval import BehaviorApprovalError, load_decisions, write_behavior_approval_outputs
 from de2sim.behaviors.proposal_generator import BehaviorProposalError, load_behavior_proposals, write_behavior_generation_outputs
+from de2sim.demo import DemoPackageError, build_demo_package
 from de2sim.ingest.artifact_parser import ArtifactParsingError, parse_artifacts_from_manifest
 from de2sim.ingest.package_reader import (
     PackageValidationError,
@@ -26,7 +27,7 @@ _PHASE0_MESSAGE = (
     "DE2Sim Phase 0 scaffold is installed, but engineering-package ingestion "
     "is not implemented yet."
 )
-_CLI_VERSION = "0.5.0-phase5a"
+_CLI_VERSION = "0.6.0-phase6a"
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -92,6 +93,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="Build deterministic Phase 5A low/high fidelity simulation artifacts from an approved ASOT.",
     )
     parser.add_argument(
+        "--build-demo-package",
+        action="store_true",
+        help="Build the Phase 6A reproducible submission demonstration package.",
+    )
+    parser.add_argument(
         "--approved-asot",
         metavar="PATH",
         help="Approved ASOT path for --build-simulation.",
@@ -100,6 +106,16 @@ def build_parser() -> argparse.ArgumentParser:
         "--scenario",
         metavar="PATH",
         help="Optional explicit simulation scenario JSON for --build-simulation.",
+    )
+    parser.add_argument(
+        "--behavior-artifacts-dir",
+        metavar="PATH",
+        help="Behavior artifacts directory for --build-demo-package.",
+    )
+    parser.add_argument(
+        "--simulation-artifacts-dir",
+        metavar="PATH",
+        help="Simulation artifacts directory for --build-demo-package.",
     )
     return parser
 
@@ -110,7 +126,34 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     if args.version:
-        print(f"DE2Sim v{_CLI_VERSION} (supersedes DE2Sim v0.4.1-phase4b; supersedes DE2Sim v0.3.2-phase3c; supersedes DE2Sim v0.3.1-phase3b; supersedes DE2Sim v0.3.0-phase3a; supersedes DE2Sim v0.2.0-phase2b)")
+        print(f"DE2Sim v{_CLI_VERSION} (supersedes DE2Sim v0.5.0-phase5a; supersedes DE2Sim v0.4.1-phase4b; supersedes DE2Sim v0.3.2-phase3c; supersedes DE2Sim v0.3.1-phase3b; supersedes DE2Sim v0.3.0-phase3a; supersedes DE2Sim v0.2.0-phase2b)")
+        return 0
+
+    if args.build_demo_package:
+        required = {
+            "--engineering-package": args.engineering_package,
+            "--approved-asot": args.approved_asot,
+            "--behavior-artifacts-dir": args.behavior_artifacts_dir,
+            "--simulation-artifacts-dir": args.simulation_artifacts_dir,
+            "--output": args.output,
+        }
+        missing = [name for name, value in required.items() if not value]
+        if missing:
+            parser.exit(2, "error: " + ", ".join(missing) + " required with --build-demo-package.\n")
+        try:
+            demo_outputs = build_demo_package(
+                args.engineering_package,
+                args.approved_asot,
+                args.behavior_artifacts_dir,
+                args.simulation_artifacts_dir,
+                args.output,
+                f"DE2Sim v{_CLI_VERSION}",
+            )
+        except DemoPackageError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 2
+        for key in ("package_root", "dashboard", "manifest", "reproducibility_report", "ai_generation_evidence", "zip"):
+            print(demo_outputs[key])
         return 0
 
     if args.build_simulation:

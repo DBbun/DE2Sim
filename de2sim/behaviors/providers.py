@@ -5,6 +5,8 @@ from __future__ import annotations
 import importlib
 import json
 import os
+import urllib.error
+import urllib.request
 from typing import Any, Protocol
 
 
@@ -104,9 +106,10 @@ class OpenAIProvider:
     model = "configured-openai-model"
     generated_by = "ai_provider"
 
-    def __init__(self, model: str = "gpt-5", client: Any | None = None) -> None:
+    def __init__(self, model: str = "gpt-5", client: Any | None = None, timeout_s: float = 30.0) -> None:
         self.model = model
         self._client = client
+        self.timeout_s = timeout_s
 
     def propose(self, prompt: dict[str, Any]) -> list[dict[str, Any]]:
         key = os.environ.get("OPENAI_API_KEY", "")
@@ -114,11 +117,21 @@ class OpenAIProvider:
             raise BehaviorProviderError("OPENAI_API_KEY is required for the OpenAI behavior provider")
         if self._client is not None:
             return _extract_json_proposals(self._client(prompt))
-        try:
-            importlib.import_module("openai")
-        except ImportError as exc:
-            raise BehaviorProviderError("OpenAI provider package is unavailable") from exc
-        raise BehaviorProviderError("OpenAI network calls are not performed by this Phase 4A adapter without an injected client")
+        payload = {
+            "model": self.model,
+            "input": [
+                {"role": "system", "content": "Return strict JSON with a top-level proposals array."},
+                {"role": "user", "content": json.dumps(prompt, sort_keys=True, ensure_ascii=False)},
+            ],
+        }
+        response = _https_json(
+            "https://api.openai.com/v1/responses",
+            payload,
+            {"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
+            self.timeout_s,
+        )
+        text = _openai_text(response)
+        return _extract_json_proposals(text)
 
 
 class AnthropicProvider:
@@ -126,9 +139,10 @@ class AnthropicProvider:
     model = "configured-anthropic-model"
     generated_by = "ai_provider"
 
-    def __init__(self, model: str = "claude-sonnet-4", client: Any | None = None) -> None:
+    def __init__(self, model: str = "claude-sonnet-4", client: Any | None = None, timeout_s: float = 30.0) -> None:
         self.model = model
         self._client = client
+        self.timeout_s = timeout_s
 
     def propose(self, prompt: dict[str, Any]) -> list[dict[str, Any]]:
         key = os.environ.get("ANTHROPIC_API_KEY", "")
@@ -136,11 +150,21 @@ class AnthropicProvider:
             raise BehaviorProviderError("ANTHROPIC_API_KEY is required for the Anthropic behavior provider")
         if self._client is not None:
             return _extract_json_proposals(self._client(prompt))
-        try:
-            importlib.import_module("anthropic")
-        except ImportError as exc:
-            raise BehaviorProviderError("Anthropic provider package is unavailable") from exc
-        raise BehaviorProviderError("Anthropic network calls are not performed by this Phase 4A adapter without an injected client")
+        payload = {
+            "model": self.model,
+            "max_tokens": 4096,
+            "messages": [
+                {"role": "user", "content": "Return strict JSON with a top-level proposals array.\n" + json.dumps(prompt, sort_keys=True, ensure_ascii=False)}
+            ],
+        }
+        response = _https_json(
+            "https://api.anthropic.com/v1/messages",
+            payload,
+            {"x-api-key": key, "anthropic-version": "2023-06-01", "Content-Type": "application/json"},
+            self.timeout_s,
+        )
+        text = _anthropic_text(response)
+        return _extract_json_proposals(text)
 
 
 def get_provider(name: str) -> BehaviorProvider:
@@ -163,6 +187,51 @@ def _extract_json_proposals(response: Any) -> list[dict[str, Any]]:
     if not isinstance(proposals, list) or not all(isinstance(item, dict) for item in proposals):
         raise BehaviorProviderError("provider response must contain a proposals array")
     return proposals
+
+
+def _https_json(url: str, payload: dict[str, Any], headers: dict[str, str], timeout_s: float) -> dict[str, Any]:
+    body = json.dumps(payload, sort_keys=True, ensure_ascii=False).encode("utf-8")
+    request = urllib.request.Request(url, data=body, headers=headers, method="POST")
+    try:
+        with urllib.request.urlopen(request, timeout=timeout_s) as response:
+            raw = response.read().decode("utf-8")
+    except urllib.error.HTTPError as exc:
+        raise BehaviorProviderError(f"provider HTTP error: {exc.code}") from exc
+    except urllib.error.URLError as exc:
+        raise BehaviorProviderError("provider network error") from exc
+    except TimeoutError as exc:
+        raise BehaviorProviderError("provider request timed out") from exc
+    try:
+        decoded = json.loads(raw)
+    except json.JSONDecodeError as exc:
+        raise BehaviorProviderError("provider returned malformed JSON") from exc
+    if not isinstance(decoded, dict):
+        raise BehaviorProviderError("provider JSON response must be an object")
+    return decoded
+
+
+def _openai_text(response: dict[str, Any]) -> str:
+    if isinstance(response.get("output_text"), str):
+        return response["output_text"]
+    texts: list[str] = []
+    for item in response.get("output", []) if isinstance(response.get("output"), list) else []:
+        for content in item.get("content", []) if isinstance(item, dict) and isinstance(item.get("content"), list) else []:
+            if isinstance(content, dict) and isinstance(content.get("text"), str):
+                texts.append(content["text"])
+    if not texts:
+        raise BehaviorProviderError("OpenAI response did not contain JSON text")
+    return "\n".join(texts)
+
+
+def _anthropic_text(response: dict[str, Any]) -> str:
+    texts = [
+        item.get("text", "")
+        for item in response.get("content", [])
+        if isinstance(item, dict) and item.get("type") == "text" and isinstance(item.get("text"), str)
+    ]
+    if not texts:
+        raise BehaviorProviderError("Anthropic response did not contain JSON text")
+    return "\n".join(texts)
 
 
 def _matching_parameters(parameters: list[dict[str, Any]], component_id: str) -> list[dict[str, Any]]:
