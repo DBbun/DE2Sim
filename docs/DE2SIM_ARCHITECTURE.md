@@ -1,5 +1,37 @@
 # DE2Sim Architecture
 
+## Phase 3B Scope
+
+Phase 3B adds a standalone interactive ASOT traceability viewer. It remains
+dependency-free and uses only the Python standard library plus embedded HTML,
+CSS, and JavaScript. The legacy DBbun content-to-simulator script remains
+unchanged.
+
+Phase 3B adds:
+
+- `de2sim/visualization/traceability_viewer.py`
+- `--build-viewer` on the Challenge II CLI
+- `asot_traceability_viewer.html`
+- `viewer_data.json`
+- `docs/TRACEABILITY_VIEWER.md`
+
+`--build-viewer` automatically performs secure ZIP ingestion, artifact parsing,
+ASOT construction, ASOT validation, provenance construction, traceability
+validation, and viewer generation:
+
+```text
+python -m de2sim.cli.challenge_pipeline --engineering-package package.zip --output out --build-viewer
+```
+
+The generated HTML is standalone and opens locally without a web server. It
+embeds normalized viewer data directly in the page and writes the same data to
+`viewer_data.json`. Graph nodes and edges are derived only from explicit ASOT
+and provenance relationships.
+
+Phase 3B does not implement AI behavior generation, simulation generation,
+Godot export, ZIP deployment packaging, exact replayability, CAD parsing, or
+field-complete provenance.
+
 ## Phase 3A Scope
 
 Phase 3A adds formal provenance and source traceability. It remains
@@ -121,6 +153,9 @@ de2sim/
     hashing.py
     trace.py
     manifest.py
+  visualization/
+    __init__.py
+    traceability_viewer.py
 tests/
   __init__.py
   test_asot_builder.py
@@ -137,6 +172,8 @@ tests/
   test_provenance_hashing.py
   test_provenance_manifest.py
   test_provenance_trace.py
+  test_traceability_viewer.py
+  test_traceability_viewer_cli.py
   test_physical_model_reader.py
   test_requirement_reader.py
   test_sysml_v2_reader.py
@@ -269,6 +306,18 @@ Validation errors return a controlled nonzero exit code.
 
 Whole-file and geometry-file provenance is valid source traceability, but it is
 reported separately from precise row, line, JSON, YAML, or SysML evidence.
+
+## Phase 3B Behavior
+
+Running the CLI with `--build-viewer` performs every earlier required stage,
+including provenance and traceability validation, then writes
+`asot_traceability_viewer.html` and `viewer_data.json`.
+
+The viewer shows header metrics, category navigation, an interactive native SVG
+relationship graph, entity details, source evidence, search and filters,
+traceability summary, traceability gaps, and explicit limitations. It uses no
+external assets or libraries and does not execute or evaluate uploaded source
+content.
 
 ## Preserved Boundaries
 

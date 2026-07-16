@@ -15,6 +15,7 @@ from de2sim.ingest.package_reader import (
 )
 from de2sim.provenance.manifest import ProvenanceManifestError, write_provenance_outputs
 from de2sim.provenance.trace import validate_traceability
+from de2sim.visualization.traceability_viewer import TraceabilityViewerError, write_viewer_outputs
 
 
 _PHASE0_COMPATIBILITY_SENTINEL = b"not a real zip and not parsed in phase 0"
@@ -22,7 +23,7 @@ _PHASE0_MESSAGE = (
     "DE2Sim Phase 0 scaffold is installed, but engineering-package ingestion "
     "is not implemented yet."
 )
-_CLI_VERSION = "0.3.0-phase3a"
+_CLI_VERSION = "0.3.1-phase3b"
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -61,6 +62,11 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Run ingestion, artifact parsing, ASOT construction, ASOT validation, provenance construction, and traceability validation.",
     )
+    parser.add_argument(
+        "--build-viewer",
+        action="store_true",
+        help="Run all prior stages and generate the standalone ASOT traceability viewer.",
+    )
     return parser
 
 
@@ -70,7 +76,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     if args.version:
-        print(f"DE2Sim v{_CLI_VERSION} (supersedes DE2Sim v0.2.0-phase2b)")
+        print(f"DE2Sim v{_CLI_VERSION} (supersedes DE2Sim v0.3.0-phase3a; supersedes DE2Sim v0.2.0-phase2b)")
         return 0
 
     if not args.engineering_package:
@@ -105,7 +111,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 2
 
     print(manifest_path)
-    if args.parse_artifacts or args.build_asot or args.build_provenance:
+    if args.parse_artifacts or args.build_asot or args.build_provenance or args.build_viewer:
         try:
             parsed_path = parse_artifacts_from_manifest(manifest_path)
         except ArtifactParsingError as exc:
@@ -115,7 +121,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     else:
         return 0
 
-    if args.build_asot or args.build_provenance:
+    if args.build_asot or args.build_provenance or args.build_viewer:
         try:
             parsed = load_json(parsed_path, "parsed_artifacts")
             document = build_asot_from_files(manifest_path, parsed_path)
@@ -128,7 +134,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(outputs["validation"])
         if outputs["asot"].name == "asot_invalid.json":
             return 4
-        if args.build_provenance:
+        if args.build_provenance or args.build_viewer:
             try:
                 package_manifest = load_json(manifest_path, "package_manifest")
                 asot_payload = load_json(outputs["asot"], "asot")
@@ -141,6 +147,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                     parsed_path,
                     outputs["asot"],
                 )
+                provenance_manifest = load_json(provenance_outputs["provenance_manifest"], "provenance_manifest")
                 traceability = load_json(provenance_outputs["traceability_report_json"], "traceability_report")
             except (ASOTBuildError, ProvenanceManifestError) as exc:
                 print(f"error: {exc}", file=sys.stderr)
@@ -151,6 +158,19 @@ def main(argv: Sequence[str] | None = None) -> int:
             if not traceability.get("valid", False):
                 print("error: traceability validation failed", file=sys.stderr)
                 return 5
+            if args.build_viewer:
+                try:
+                    viewer_outputs = write_viewer_outputs(
+                        asot_payload,
+                        provenance_manifest,
+                        traceability,
+                        Path(args.output),
+                    )
+                except TraceabilityViewerError as exc:
+                    print(f"error: {exc}", file=sys.stderr)
+                    return 2
+                print(viewer_outputs["viewer_html"])
+                print(viewer_outputs["viewer_data"])
     return 0
 
 
