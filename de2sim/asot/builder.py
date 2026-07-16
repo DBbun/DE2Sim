@@ -25,6 +25,7 @@ from de2sim.asot.schema import (
     utc_now,
 )
 from de2sim.asot.validators import validate_asot
+from de2sim.provenance.trace import classify_locator
 
 
 GENERATOR_NAME = "de2sim.asot.builder"
@@ -89,6 +90,7 @@ def build_asot(manifest: dict[str, Any], parsed: dict[str, Any], parsed_artifact
     _apply_component_relationships(components, source_to_component, name_to_component, parsed, warnings)
     _attach_component_lists(components, interfaces, parameters, behaviors, geometry)
     _apply_requirement_relationships(requirements, components, behaviors, interfaces, parsed, warnings)
+    _finalize_provenance_targets(provenance, components, requirements, interfaces, parameters, physical_models, behaviors, geometry)
 
     metadata = ASOTMetadata(
         title=title,
@@ -230,12 +232,17 @@ def _build_provenance(
     source_sha_by_path: dict[str, str],
 ) -> tuple[list[ProvenanceRecord], dict[tuple[str, str, str], str]]:
     records: dict[tuple[str, str, str], ProvenanceRecord] = {}
+    file_by_path = {
+        _text(item.get("relative_path")): item
+        for item in _items(manifest.get("files"))
+        if _text(item.get("relative_path"))
+    }
     for section in ("requirements", "parameters", "sysml_elements", "sysml_relationships", "physical_models"):
         for item in _items(parsed.get(section)):
             key = _source_key(item)
             if not key[0]:
                 continue
-            records.setdefault(key, _provenance_record(item, key, source_sha_by_path))
+            records.setdefault(key, _provenance_record(item, key, source_sha_by_path, file_by_path))
     for item in _items(manifest.get("files")):
         if _text(item.get("role")) == "geometry":
             rel = _text(item.get("relative_path"))
@@ -246,23 +253,39 @@ def _build_provenance(
                     provenance_id=stable_id("provenance", {"path": rel, "locator": "file", "parser": "package_reader.phase1a"}),
                     source_relative_path=rel,
                     source_sha256=_text(item.get("sha256")),
-                    source_locator="file",
+                    source_role=_text(item.get("role")),
                     parser_name="package_reader.phase1a",
+                    parser_status=_text(item.get("parser_status")),
+                    source_locator="file",
+                    evidence_type=classify_locator("file", rel),
+                    evidence_text=Path(rel).name,
                     confidence=1.0,
+                    warnings=_warnings(item),
                 ),
             )
     return sorted(records.values(), key=lambda item: item.provenance_id), {key: value.provenance_id for key, value in records.items()}
 
 
-def _provenance_record(item: dict[str, Any], key: tuple[str, str, str], source_sha_by_path: dict[str, str]) -> ProvenanceRecord:
+def _provenance_record(
+    item: dict[str, Any],
+    key: tuple[str, str, str],
+    source_sha_by_path: dict[str, str],
+    file_by_path: dict[str, dict[str, Any]],
+) -> ProvenanceRecord:
     rel, locator, parser_name = key
+    file_entry = file_by_path.get(rel, {})
     return ProvenanceRecord(
         provenance_id=stable_id("provenance", {"path": rel, "locator": locator, "parser": parser_name}),
         source_relative_path=rel,
         source_sha256=source_sha_by_path.get(rel, ""),
-        source_locator=locator,
+        source_role=_text(item.get("source_role") or file_entry.get("role")),
         parser_name=parser_name,
+        parser_status=_text(file_entry.get("parser_status")),
+        source_locator=locator,
+        evidence_type=classify_locator(locator, rel),
+        evidence_text=_evidence_text(item),
         confidence=1.0,
+        warnings=_warnings(item),
     )
 
 
@@ -292,6 +315,7 @@ def _build_requirements(parsed: dict[str, Any], provenance_by_key: dict[tuple[st
                 name=title,
                 description=text,
                 source_references=_source_refs(item, provenance_by_key),
+                traceability_status=_traceability_status(_source_refs(item, provenance_by_key), "precise"),
                 status="source-derived",
                 warnings=_warnings(item),
                 requirement_id=req_id,
@@ -332,6 +356,7 @@ def _build_parameters(parsed: dict[str, Any], provenance_by_key: dict[tuple[str,
                 name=name,
                 description=_text(item.get("description")),
                 source_references=_source_refs(item, provenance_by_key),
+                traceability_status=_traceability_status(_source_refs(item, provenance_by_key), "precise"),
                 status="source-derived",
                 warnings=_warnings(item),
                 value=normalized_value,
@@ -370,6 +395,7 @@ def _build_components(
                 name=name,
                 description=_text(item.get("description")),
                 source_references=_source_refs(item, provenance_by_key),
+                traceability_status=_traceability_status(_source_refs(item, provenance_by_key), "precise"),
                 status="source-derived",
                 warnings=_warnings(item),
                 component_type=kind,
@@ -407,6 +433,7 @@ def _build_interfaces(
                 name=name,
                 description=_text(item.get("description")),
                 source_references=_source_refs(item, provenance_by_key),
+                traceability_status=_traceability_status(_source_refs(item, provenance_by_key), "precise"),
                 status="source-derived",
                 warnings=_warnings(item),
                 interface_type=kind,
@@ -439,6 +466,7 @@ def _build_interfaces(
                 name=_text(item.get("name")) or _text(item.get("description")) or f"{source_text} to {target_text}".strip(),
                 description=_text(item.get("description")),
                 source_references=_source_refs(item, provenance_by_key),
+                traceability_status=_traceability_status(_source_refs(item, provenance_by_key), "precise"),
                 status="source-derived",
                 warnings=rel_warnings,
                 interface_type="connect",
@@ -485,6 +513,7 @@ def _build_physical_models(
                 name=name,
                 description=_text(item.get("description")),
                 source_references=_source_refs(item, provenance_by_key),
+                traceability_status=_traceability_status(_source_refs(item, provenance_by_key), "precise"),
                 status="source-derived",
                 warnings=sorted(set(model_warnings)),
                 equation=equation,
@@ -514,6 +543,7 @@ def _build_behaviors(parsed: dict[str, Any], provenance_by_key: dict[tuple[str, 
                 name=name,
                 description=_text(item.get("description")),
                 source_references=_source_refs(item, provenance_by_key),
+                traceability_status=_traceability_status(_source_refs(item, provenance_by_key), "precise"),
                 status="source-derived",
                 warnings=_warnings(item),
                 behavior_type=kind,
@@ -543,6 +573,7 @@ def _build_geometry(manifest: dict[str, Any], provenance_by_key: dict[tuple[str,
                 name=Path(rel).name,
                 description="Geometry file referenced by package manifest; not parsed as CAD.",
                 source_references=[provenance_by_key[key]] if key in provenance_by_key else [],
+                traceability_status=_traceability_status([provenance_by_key[key]] if key in provenance_by_key else [], "whole_file"),
                 status="referenced",
                 warnings=_warnings(item),
                 source_relative_path=rel,
@@ -711,3 +742,26 @@ def _format(item: dict[str, Any]) -> str:
 
 def _write_json(payload: dict[str, Any], path: Path) -> None:
     path.write_text(json.dumps(payload, indent=2, sort_keys=False, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
+
+
+def _traceability_status(source_references: list[str], provided_status: str) -> str:
+    return provided_status if source_references else "not_provided"
+
+
+def _evidence_text(item: dict[str, Any]) -> str:
+    for key in ("text", "equation", "description", "name", "element_id", "requirement_id", "parameter_id"):
+        value = _text(item.get(key))
+        if value:
+            return value
+    return ""
+
+
+def _finalize_provenance_targets(provenance: list[ProvenanceRecord], *entity_groups: list[Any]) -> None:
+    by_id = {record.provenance_id: record for record in provenance}
+    for group in entity_groups:
+        for entity in group:
+            for provenance_id in getattr(entity, "source_references", []):
+                if provenance_id in by_id:
+                    by_id[provenance_id].target_entity_ids = sorted(
+                        set(by_id[provenance_id].target_entity_ids + [entity.stable_id])
+                    )

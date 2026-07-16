@@ -73,6 +73,7 @@ class EngineeringEntity:
     name: str
     description: str = ""
     source_references: list[str] = field(default_factory=list)
+    traceability_status: str = "not_provided"
     status: str = "draft"
     warnings: list[str] = field(default_factory=list)
 
@@ -89,6 +90,7 @@ class EngineeringEntity:
             "name": self.name,
             "description": self.description,
             "source_references": _sorted_texts(self.source_references),
+            "traceability_status": self.traceability_status,
             "status": self.status,
             "warnings": _sorted_texts(self.warnings),
         }
@@ -100,6 +102,7 @@ class EngineeringEntity:
             "name": str(data.get("name", "")),
             "description": str(data.get("description", "")),
             "source_references": [str(item) for item in data.get("source_references", [])],
+            "traceability_status": str(data.get("traceability_status", "not_provided")),
             "status": str(data.get("status", "")),
             "warnings": [str(item) for item in data.get("warnings", [])],
         }
@@ -399,18 +402,30 @@ class ProvenanceRecord:
     provenance_id: str
     source_relative_path: str
     source_sha256: str
-    source_locator: str
-    parser_name: str
+    source_role: str = ""
+    parser_name: str = ""
+    parser_status: str = ""
+    source_locator: str = "file"
+    evidence_type: str = "whole_file"
+    evidence_text: str = ""
     confidence: float | None = None
+    target_entity_ids: list[str] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
         return {
             "provenance_id": self.provenance_id,
             "source_relative_path": self.source_relative_path,
             "source_sha256": self.source_sha256,
-            "source_locator": self.source_locator,
+            "source_role": self.source_role,
             "parser_name": self.parser_name,
+            "parser_status": self.parser_status,
+            "source_locator": self.source_locator,
+            "evidence_type": self.evidence_type,
+            "evidence_text": self.evidence_text,
             "confidence": self.confidence,
+            "target_entity_ids": _sorted_texts(self.target_entity_ids),
+            "warnings": _sorted_texts(self.warnings),
         }
 
     @classmethod
@@ -419,9 +434,15 @@ class ProvenanceRecord:
             provenance_id=str(data.get("provenance_id", "")),
             source_relative_path=str(data.get("source_relative_path", "")),
             source_sha256=str(data.get("source_sha256", "")),
-            source_locator=str(data.get("source_locator", "")),
+            source_role=str(data.get("source_role", "")),
             parser_name=str(data.get("parser_name", "")),
+            parser_status=str(data.get("parser_status", "")),
+            source_locator=str(data.get("source_locator", "")),
+            evidence_type=str(data.get("evidence_type", "whole_file")),
+            evidence_text=str(data.get("evidence_text", "")),
             confidence=data.get("confidence"),
+            target_entity_ids=[str(item) for item in data.get("target_entity_ids", [])],
+            warnings=[str(item) for item in data.get("warnings", [])],
         )
 
 

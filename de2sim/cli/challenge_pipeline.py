@@ -13,6 +13,8 @@ from de2sim.ingest.package_reader import (
     PackageValidationError,
     ingest_engineering_package,
 )
+from de2sim.provenance.manifest import ProvenanceManifestError, write_provenance_outputs
+from de2sim.provenance.trace import validate_traceability
 
 
 _PHASE0_COMPATIBILITY_SENTINEL = b"not a real zip and not parsed in phase 0"
@@ -20,7 +22,7 @@ _PHASE0_MESSAGE = (
     "DE2Sim Phase 0 scaffold is installed, but engineering-package ingestion "
     "is not implemented yet."
 )
-_CLI_VERSION = "0.2.0-phase2b"
+_CLI_VERSION = "0.3.0-phase3a"
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -54,6 +56,11 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Run ingestion, artifact parsing, ASOT construction, and ASOT validation.",
     )
+    parser.add_argument(
+        "--build-provenance",
+        action="store_true",
+        help="Run ingestion, artifact parsing, ASOT construction, ASOT validation, provenance construction, and traceability validation.",
+    )
     return parser
 
 
@@ -63,7 +70,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     if args.version:
-        print(f"DE2Sim v{_CLI_VERSION}")
+        print(f"DE2Sim v{_CLI_VERSION} (supersedes DE2Sim v0.2.0-phase2b)")
         return 0
 
     if not args.engineering_package:
@@ -98,7 +105,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 2
 
     print(manifest_path)
-    if args.parse_artifacts or args.build_asot:
+    if args.parse_artifacts or args.build_asot or args.build_provenance:
         try:
             parsed_path = parse_artifacts_from_manifest(manifest_path)
         except ArtifactParsingError as exc:
@@ -108,7 +115,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     else:
         return 0
 
-    if args.build_asot:
+    if args.build_asot or args.build_provenance:
         try:
             parsed = load_json(parsed_path, "parsed_artifacts")
             document = build_asot_from_files(manifest_path, parsed_path)
@@ -121,6 +128,29 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(outputs["validation"])
         if outputs["asot"].name == "asot_invalid.json":
             return 4
+        if args.build_provenance:
+            try:
+                package_manifest = load_json(manifest_path, "package_manifest")
+                asot_payload = load_json(outputs["asot"], "asot")
+                provenance_outputs = write_provenance_outputs(
+                    asot_payload,
+                    package_manifest,
+                    parsed,
+                    Path(args.output),
+                    manifest_path,
+                    parsed_path,
+                    outputs["asot"],
+                )
+                traceability = load_json(provenance_outputs["traceability_report_json"], "traceability_report")
+            except (ASOTBuildError, ProvenanceManifestError) as exc:
+                print(f"error: {exc}", file=sys.stderr)
+                return 2
+            print(provenance_outputs["provenance_manifest"])
+            print(provenance_outputs["traceability_report_json"])
+            print(provenance_outputs["traceability_report_md"])
+            if not traceability.get("valid", False):
+                print("error: traceability validation failed", file=sys.stderr)
+                return 5
     return 0
 
 

@@ -23,6 +23,11 @@ from de2sim.asot.schema import (
     stable_id,
 )
 from de2sim.asot.validators import ValidationResult, validate_asot
+from de2sim.provenance import (
+    build_provenance_manifest,
+    validate_traceability,
+    write_provenance_outputs,
+)
 
 __all__ = [
     "ASOTDocument",
@@ -42,9 +47,12 @@ __all__ = [
     "ValidationResult",
     "build_asot",
     "build_asot_from_files",
+    "build_provenance_manifest",
     "read_asot_json",
     "stable_id",
+    "validate_traceability",
     "validate_asot",
+    "write_provenance_outputs",
     "write_asot_outputs",
     "write_asot_json",
 ]

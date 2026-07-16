@@ -12,6 +12,7 @@ from de2sim.asot.schema import (
     ASOTDocument,
     EngineeringEntity,
 )
+from de2sim.provenance.trace import ALLOWED_EVIDENCE_TYPES
 
 
 ALLOWED_APPROVAL_STATUSES = {"not_required", "pending", "approved", "rejected"}
@@ -56,6 +57,7 @@ def validate_asot(asot: ASOTDocument | dict[str, Any]) -> ValidationResult:
     geometry_ids = {item.stable_id for item in document.geometry}
 
     _detect_duplicate_ids(document, errors)
+    _validate_provenance_records(document, known_ids, errors)
     _validate_source_references(document, known_ids, warnings)
     _validate_component_hierarchy(document, component_ids, errors)
     _validate_interfaces(document, component_ids, errors)
@@ -133,8 +135,20 @@ def _detect_duplicate_ids(document: ASOTDocument, errors: list[str]) -> None:
         if not item.provenance_id:
             errors.append("provenance record is missing provenance_id")
         elif item.provenance_id in seen:
-            errors.append(f"duplicate stable ID: {item.provenance_id}")
+            errors.append(f"duplicate provenance ID: {item.provenance_id}")
         seen.add(item.provenance_id)
+
+
+def _validate_provenance_records(document: ASOTDocument, known_ids: set[str], errors: list[str]) -> None:
+    for item in document.provenance:
+        if item.evidence_type and item.evidence_type not in ALLOWED_EVIDENCE_TYPES:
+            errors.append(f"provenance {item.provenance_id} has unsupported evidence_type: {item.evidence_type}")
+        if item.confidence is not None:
+            if not isinstance(item.confidence, (int, float)) or item.confidence < 0.0 or item.confidence > 1.0:
+                errors.append(f"provenance {item.provenance_id} has invalid confidence: {item.confidence}")
+        for target_id in item.target_entity_ids:
+            if target_id not in known_ids:
+                errors.append(f"provenance {item.provenance_id} references nonexistent ASOT entity: {target_id}")
 
 
 def _validate_source_references(document: ASOTDocument, known_ids: set[str], warnings: list[str]) -> None:

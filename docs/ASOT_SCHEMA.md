@@ -5,6 +5,9 @@ Phase 2A defines a versioned, dependency-free Authoritative Source of Truth
 compute provenance hashes, generate AI behavior, run simulations, export Godot,
 or package outputs.
 
+Phase 3A extends the same ASOT schema with formal source traceability fields.
+It does not claim complete field-level provenance or exact replayability.
+
 ## Schema Version
 
 The supported schema version is:
@@ -51,6 +54,7 @@ and geometry records contain:
 - `name`
 - `description`
 - `source_references`
+- `traceability_status`
 - `status`
 - `warnings`
 
@@ -126,14 +130,39 @@ Geometry records add:
 - `coordinate_system`
 - `unit`
 
-Provenance records are placeholders in Phase 2A, but support:
+Supported `traceability_status` values used by Phase 3A include `precise`,
+`whole_file`, `not_provided`, `deferred`, `unsupported`, and `unresolved`.
+
+Provenance records support:
 
 - `provenance_id`
 - `source_relative_path`
 - `source_sha256`
-- `source_locator`
+- `source_role`
 - `parser_name`
+- `parser_status`
+- `source_locator`
+- `evidence_type`
+- `evidence_text`
 - `confidence`
+- `target_entity_ids`
+- `warnings`
+
+Supported `evidence_type` values are:
+
+- `csv_row`
+- `text_line`
+- `text_line_range`
+- `json_pointer`
+- `yaml_key_path`
+- `sysml_element`
+- `sysml_line`
+- `whole_file`
+- `geometry_file`
+
+ASOT `source_references` point to provenance IDs. Phase 3A traceability
+validation rejects ASOT source references to nonexistent provenance records and
+provenance records that target nonexistent ASOT entities.
 
 ## JSON I/O
 

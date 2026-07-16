@@ -1,5 +1,39 @@
 # DE2Sim Architecture
 
+## Phase 3A Scope
+
+Phase 3A adds formal provenance and source traceability. It remains
+dependency-free and uses only the Python standard library. The legacy DBbun
+content-to-simulator script remains unchanged.
+
+Phase 3A adds:
+
+- `de2sim/provenance/hashing.py`
+- `de2sim/provenance/trace.py`
+- `de2sim/provenance/manifest.py`
+- `--build-provenance` on the Challenge II CLI
+- `provenance_manifest.json`
+- `traceability_report.json`
+- `traceability_report.md`
+- `docs/PROVENANCE_MODEL.md`
+
+`--build-provenance` automatically performs secure ZIP ingestion, artifact
+parsing, ASOT construction, ASOT validation, provenance construction, and
+traceability validation:
+
+```text
+python -m de2sim.cli.challenge_pipeline --engineering-package package.zip --output out --build-provenance
+```
+
+The command prints generated paths for `package_manifest.json`,
+`parsed_artifacts.json`, `asot.json`, `asot_summary.md`,
+`asot_validation.json`, `provenance_manifest.json`,
+`traceability_report.json`, and `traceability_report.md`.
+
+Phase 3A does not implement AI behavior generation, simulation generation,
+Godot export, ZIP deployment packaging, exact replayability, or complete
+field-level provenance.
+
 ## Phase 2B Scope
 
 Phase 2B builds and validates an ASOT from the Phase 1 engineering-package
@@ -82,6 +116,11 @@ de2sim/
     schema.py
     io.py
     validators.py
+  provenance/
+    __init__.py
+    hashing.py
+    trace.py
+    manifest.py
 tests/
   __init__.py
   test_asot_builder.py
@@ -94,6 +133,10 @@ tests/
   test_package_reader.py
   test_parameter_reader.py
   test_phase0_scaffold.py
+  test_provenance_cli.py
+  test_provenance_hashing.py
+  test_provenance_manifest.py
+  test_provenance_trace.py
   test_physical_model_reader.py
   test_requirement_reader.py
   test_sysml_v2_reader.py
@@ -207,18 +250,39 @@ If ASOT validation reports errors, the CLI writes `asot_invalid.json` and
 `asot_validation.json`, then returns a controlled nonzero exit code. Validation
 warnings still permit `asot.json`.
 
+## Phase 3A Behavior
+
+Running the CLI with `--build-provenance` performs Phase 1A ingestion, Phase 1B
+artifact parsing, Phase 2B ASOT construction and validation, and then builds a
+formal provenance manifest plus traceability reports.
+
+The provenance manifest records source file checksums, parser status, ASOT
+checksums, deterministic provenance records, referenced entity IDs, conservative
+coverage counts, and warnings. Source files and provenance records are sorted
+deterministically. The only runtime-varying provenance field is
+`generated_at_utc`.
+
+Traceability validation checks duplicate provenance IDs, broken ASOT and
+provenance references, missing files, checksum mismatches, unsupported evidence
+types, and invalid confidence values. Warnings are separated from errors.
+Validation errors return a controlled nonzero exit code.
+
+Whole-file and geometry-file provenance is valid source traceability, but it is
+reported separately from precise row, line, JSON, YAML, or SysML evidence.
+
 ## Preserved Boundaries
 
-Phase 2B intentionally does not implement:
+Phase 3A intentionally does not implement:
 
 - AI behavior generation
 - simulation generation
 - Godot export
 - packaging
 - deployment
+- exact replayability
+- complete field-level provenance
 - full SysML v2 semantic validation
 - PDF, DOCX, XLSX, or binary CAD parsing
-- formal Phase 3 provenance hashing or detailed lineage
 
 Future phases will add those capabilities under `de2sim/` while keeping the
 legacy DBbun CLI operational. Unsupported files remain listed in the manifest
