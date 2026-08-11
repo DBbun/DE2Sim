@@ -1,5 +1,10 @@
 # DE2Sim
 
+### 🔴 [**Live Demo — dbbun.github.io/DE2Sim**](https://dbbun.github.io/DE2Sim/)
+Runs entirely in your browser — dashboard, 3D geometry viewer, simulation
+viewer, ASOT traceability, and behavior review. No install, no server, no
+internet required after the page loads.
+
 DE2Sim converts standards-based digital-engineering artifacts (CAD-export
 geometry, a SysMLv2 subset, parametric data) into an Authoritative Source
 of Truth (ASOT), AI-assisted behavior proposals reviewed and approved by a
