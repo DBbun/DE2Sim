@@ -1,0 +1,18 @@
+{
+  "errors": [],
+  "geometry_id": "geometry-442731f9c74c1b85",
+  "linked_component_id": "component-65c79176492bd9b2",
+  "linked_parameter_ids": {
+    "x": "parameter-cb1823af29e29a01",
+    "y": "parameter-f925806b3ec7f538",
+    "z": "parameter-81c5727323f02772"
+  },
+  "linked_physical_model_id": "physicalmodel-3297b6e79f95766a",
+  "relationship_source": "explicit geometry_linkage.json sidecar only",
+  "schema_version": "de2sim.geometry_linkage_report.v1",
+  "source_geometry": "geometry/demo_uas.stl",
+  "source_provenance_ids": [
+    "provenance-ba5af79b9586b71e"
+  ],
+  "valid": true
+}

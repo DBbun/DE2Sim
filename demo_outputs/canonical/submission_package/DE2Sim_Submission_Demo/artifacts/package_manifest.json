@@ -1,0 +1,93 @@
+{
+  "schema_version": "de2sim.package_manifest.v1",
+  "package_filename": "DBbun-DE2Sim-DemoUAS-Geometry.zip",
+  "package_sha256": "83c21ca8e033487d08800c5008fa040ee5ea1cc36a0bd9ddd11d8363381e88b9",
+  "generated_at_utc": "2026-07-16T18:35:17Z",
+  "extraction_root": "work/package",
+  "file_count": 8,
+  "warnings": [],
+  "files": [
+    {
+      "relative_path": "geometry/README.md",
+      "role": "documentation",
+      "extension": ".md",
+      "media_type": "text/markdown",
+      "size_bytes": 546,
+      "sha256": "b5c7c7de37057f298cf2331fede49b42d711d6fb51f8a9c7f8330c28838c9db5",
+      "parser_status": "unsupported",
+      "warnings": []
+    },
+    {
+      "relative_path": "geometry/demo_uas.stl",
+      "role": "geometry",
+      "extension": ".stl",
+      "media_type": "model/stl",
+      "size_bytes": 27049,
+      "sha256": "a480ea2f2c1951975008d48747d41bc6f7b65fa2483f2033b38801fe2c144ea1",
+      "parser_status": "referenced_not_parsed",
+      "warnings": []
+    },
+    {
+      "relative_path": "geometry/geometry_linkage.json",
+      "role": "geometry",
+      "extension": ".json",
+      "media_type": "application/json",
+      "size_bytes": 547,
+      "sha256": "e68eb655dc02063040d0bc9aad689e33e27f0d2f47415f8fb71166994806c859",
+      "parser_status": "parsed",
+      "warnings": [
+        "parent folder suggests geometry, but extension .json is not recognized for that role"
+      ]
+    },
+    {
+      "relative_path": "parameters/geometry_parameters.csv",
+      "role": "parameters",
+      "extension": ".csv",
+      "media_type": "application/vnd.ms-excel",
+      "size_bytes": 416,
+      "sha256": "34aa3e0a755cbe0f3faed88633a4bdede34404100d0b0e26bcdda46dc550c09c",
+      "parser_status": "parsed",
+      "warnings": []
+    },
+    {
+      "relative_path": "parameters/parameters.csv",
+      "role": "parameters",
+      "extension": ".csv",
+      "media_type": "application/vnd.ms-excel",
+      "size_bytes": 239,
+      "sha256": "51f002761ff4d89fc4a535aeeafcee44c02977f298ebe58b5760b710c815c0a6",
+      "parser_status": "parsed",
+      "warnings": []
+    },
+    {
+      "relative_path": "physical_models/energy_model.md",
+      "role": "physical_model",
+      "extension": ".md",
+      "media_type": "text/markdown",
+      "size_bytes": 215,
+      "sha256": "87a0a826d6a4adc28afa1c8ff48df4777430f5d975210079ac817856d551b78e",
+      "parser_status": "parsed",
+      "warnings": []
+    },
+    {
+      "relative_path": "requirements/requirements.csv",
+      "role": "requirements",
+      "extension": ".csv",
+      "media_type": "application/vnd.ms-excel",
+      "size_bytes": 264,
+      "sha256": "0d864706dc53b107826ee86b96e795d077e346aae62b05101ca1b94342f31a00",
+      "parser_status": "parsed",
+      "warnings": []
+    },
+    {
+      "relative_path": "sysml/demo_uas.sysml",
+      "role": "sysml",
+      "extension": ".sysml",
+      "media_type": "text/plain",
+      "size_bytes": 229,
+      "sha256": "09afd2a5e3764dbd5e14849493d204f0482a51472ebdd7e3f97880e07b6e193a",
+      "parser_status": "parsed",
+      "warnings": []
+    }
+  ]
+}

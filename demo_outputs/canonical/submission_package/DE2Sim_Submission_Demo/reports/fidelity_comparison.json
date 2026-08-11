@@ -1,0 +1,110 @@
+{
+  "differences": {
+    "distance_traveled_m": -52.413312,
+    "energy_consumed_wh": 51.577,
+    "final_distance_from_home_m": 67.287149,
+    "landing_time_s": 352.0,
+    "maximum_speed_mps": 0.0,
+    "minimum_battery_percent": -1.074521,
+    "number_of_telemetry_samples": 5360,
+    "return_to_base_trigger_time_s": 350.0,
+    "total_simulated_mission_time_s": 352.0
+  },
+  "explanation": "The low-fidelity model changes heading instantaneously, ignores wind and acceleration, and uses constant power. The high-fidelity demonstrative point-mass model integrates velocity, acceleration limits, wind disturbance, idle power, and speed-dependent power. These differences can change trigger time, landing time, distance traveled, and energy use; neither fidelity is asserted physically correct without validation data.",
+  "high": {
+    "distance_traveled_m": 71947.586688,
+    "energy_consumed_wh": 4371.577,
+    "final_distance_from_home_m": 67.287149,
+    "landing_time_s": 13312.0,
+    "maximum_speed_mps": 25.0,
+    "minimum_battery_percent": 8.925479,
+    "number_of_telemetry_samples": 6658,
+    "return_to_base_trigger_time_s": 11870.0,
+    "total_simulated_mission_time_s": 13312.0
+  },
+  "low": {
+    "distance_traveled_m": 72000.0,
+    "energy_consumed_wh": 4320.0,
+    "final_distance_from_home_m": 0.0,
+    "landing_time_s": 12960.0,
+    "maximum_speed_mps": 25.0,
+    "minimum_battery_percent": 10.0,
+    "number_of_telemetry_samples": 1298,
+    "return_to_base_trigger_time_s": 11520.0,
+    "total_simulated_mission_time_s": 12960.0
+  },
+  "requirement_results": {
+    "high": {
+      "low_battery_return": {
+        "evidence": "return_to_base entered when battery_state <= battery_threshold and ReturnToBase action was invoked",
+        "requirement_id": "requirement-f573675ab7b7a6de",
+        "status": "pass",
+        "telemetry_indices": {
+          "count": 1,
+          "event_index": 5936,
+          "first_index": 5936,
+          "last_index": 5936
+        }
+      },
+      "maximum_speed": {
+        "interpretation": "Both commanded speed and reported ground speed are checked against ASOT max_speed for this demonstrative point model.",
+        "max_observed_speed_mps": 25.0,
+        "requirement_id": "requirement-cc13b5cf4cd2b56b",
+        "status": "pass",
+        "telemetry_indices": {
+          "count": 1505,
+          "event_index": 2,
+          "first_index": 2,
+          "last_index": 6656
+        }
+      }
+    },
+    "low": {
+      "low_battery_return": {
+        "evidence": "return_to_base entered when battery_state <= battery_threshold and ReturnToBase action was invoked",
+        "requirement_id": "requirement-f573675ab7b7a6de",
+        "status": "pass",
+        "telemetry_indices": {
+          "count": 1,
+          "event_index": 1153,
+          "first_index": 1153,
+          "last_index": 1153
+        }
+      },
+      "maximum_speed": {
+        "interpretation": "Both commanded speed and reported ground speed are checked against ASOT max_speed for this demonstrative point model.",
+        "max_observed_speed_mps": 25.0,
+        "requirement_id": "requirement-cc13b5cf4cd2b56b",
+        "status": "pass",
+        "telemetry_indices": {
+          "count": 287,
+          "event_index": 2,
+          "first_index": 2,
+          "last_index": 1296
+        }
+      }
+    }
+  },
+  "scenario_feasibility": {
+    "per_fidelity": {
+      "high": {
+        "battery_depleted_before_landing": false,
+        "battery_reserve_at_landing_percent": 8.925479,
+        "mission_completed": true,
+        "scenario_feasibility_explanation": "Mission landed with positive battery reserve under the explicit demonstration scenario.",
+        "scenario_feasibility_status": "pass",
+        "terminal_reason": "landed"
+      },
+      "low": {
+        "battery_depleted_before_landing": false,
+        "battery_reserve_at_landing_percent": 10.0,
+        "mission_completed": true,
+        "scenario_feasibility_explanation": "Mission landed with positive battery reserve under the explicit demonstration scenario.",
+        "scenario_feasibility_status": "pass",
+        "terminal_reason": "landed"
+      }
+    },
+    "scenario_feasibility_explanation": "Both fidelities completed the mission and landed with positive battery reserve.",
+    "scenario_feasibility_status": "pass"
+  }
+}

@@ -1,0 +1,368 @@
+{
+  "high": [
+    {
+      "action": "begin mission while respecting documented operating limits, including max_speed",
+      "event_type": "mission_started",
+      "fidelity": "high",
+      "guard": "required mission evidence is available",
+      "provenance_ids": [
+        "provenance-0a7b7db8ac841b2f",
+        "provenance-42fdf13657a78f66",
+        "provenance-edd1aa774c5ac577",
+        "provenance-efc0e36c885509f3",
+        "provenance-f861dc618134fdc1",
+        "provenance-f980041cb9698dee"
+      ],
+      "related_behavior_ids": [
+        "behavior-a7684a40e256a954"
+      ],
+      "related_parameter_ids": [
+        "parameter-d617d6864ad0cef0",
+        "parameter-eab25fb74d9197be",
+        "parameter-6cef2ed5beb33e99"
+      ],
+      "related_requirement_ids": [
+        "requirement-f573675ab7b7a6de",
+        "requirement-cc13b5cf4cd2b56b"
+      ],
+      "state_after": "mission_flight",
+      "state_before": "preflight",
+      "time_s": 0.0,
+      "trigger": "mission_started"
+    },
+    {
+      "action": "continue mission flight or loiter",
+      "event_type": "mission_waypoint_reached",
+      "fidelity": "high",
+      "guard": "distance_to_waypoint <= arrival_radius",
+      "provenance_ids": [
+        "provenance-0a7b7db8ac841b2f",
+        "provenance-42fdf13657a78f66",
+        "provenance-edd1aa774c5ac577",
+        "provenance-efc0e36c885509f3",
+        "provenance-f861dc618134fdc1",
+        "provenance-f980041cb9698dee"
+      ],
+      "related_behavior_ids": [
+        "behavior-a7684a40e256a954"
+      ],
+      "related_parameter_ids": [
+        "parameter-d617d6864ad0cef0",
+        "parameter-eab25fb74d9197be",
+        "parameter-6cef2ed5beb33e99"
+      ],
+      "related_requirement_ids": [
+        "requirement-f573675ab7b7a6de",
+        "requirement-cc13b5cf4cd2b56b"
+      ],
+      "state_after": "mission_flight",
+      "state_before": "mission_flight",
+      "time_s": 1568.0,
+      "trigger": "mission_waypoint_reached"
+    },
+    {
+      "action": "evaluate low-battery transition",
+      "event_type": "battery_threshold_reached",
+      "fidelity": "high",
+      "guard": "battery_state <= battery_threshold",
+      "provenance_ids": [
+        "provenance-0a7b7db8ac841b2f",
+        "provenance-42fdf13657a78f66",
+        "provenance-edd1aa774c5ac577",
+        "provenance-efc0e36c885509f3",
+        "provenance-f861dc618134fdc1",
+        "provenance-f980041cb9698dee"
+      ],
+      "related_behavior_ids": [
+        "behavior-a7684a40e256a954"
+      ],
+      "related_parameter_ids": [
+        "parameter-d617d6864ad0cef0",
+        "parameter-eab25fb74d9197be",
+        "parameter-6cef2ed5beb33e99"
+      ],
+      "related_requirement_ids": [
+        "requirement-f573675ab7b7a6de",
+        "requirement-cc13b5cf4cd2b56b"
+      ],
+      "state_after": "mission_flight",
+      "state_before": "mission_flight",
+      "time_s": 11868.0,
+      "trigger": "battery_threshold_reached"
+    },
+    {
+      "action": "ReturnToBase",
+      "event_type": "return_to_base_invoked",
+      "fidelity": "high",
+      "guard": "battery_state <= battery_threshold",
+      "provenance_ids": [
+        "provenance-0a7b7db8ac841b2f",
+        "provenance-42fdf13657a78f66",
+        "provenance-edd1aa774c5ac577",
+        "provenance-efc0e36c885509f3",
+        "provenance-f861dc618134fdc1",
+        "provenance-f980041cb9698dee"
+      ],
+      "related_behavior_ids": [
+        "behavior-a7684a40e256a954",
+        "behavior-e0cb3cdea8db55dd"
+      ],
+      "related_parameter_ids": [
+        "parameter-d617d6864ad0cef0",
+        "parameter-eab25fb74d9197be",
+        "parameter-6cef2ed5beb33e99"
+      ],
+      "related_requirement_ids": [
+        "requirement-f573675ab7b7a6de",
+        "requirement-cc13b5cf4cd2b56b"
+      ],
+      "state_after": "return_to_base",
+      "state_before": "mission_flight",
+      "time_s": 11868.0,
+      "trigger": "battery_threshold_reached"
+    },
+    {
+      "action": "confirm home arrival",
+      "event_type": "home_position_reached",
+      "fidelity": "high",
+      "guard": "distance_to_home <= arrival_radius",
+      "provenance_ids": [
+        "provenance-0a7b7db8ac841b2f",
+        "provenance-42fdf13657a78f66",
+        "provenance-edd1aa774c5ac577",
+        "provenance-efc0e36c885509f3",
+        "provenance-f861dc618134fdc1",
+        "provenance-f980041cb9698dee"
+      ],
+      "related_behavior_ids": [
+        "behavior-a7684a40e256a954"
+      ],
+      "related_parameter_ids": [
+        "parameter-d617d6864ad0cef0",
+        "parameter-eab25fb74d9197be",
+        "parameter-6cef2ed5beb33e99"
+      ],
+      "related_requirement_ids": [
+        "requirement-f573675ab7b7a6de",
+        "requirement-cc13b5cf4cd2b56b"
+      ],
+      "state_after": "return_to_base",
+      "state_before": "return_to_base",
+      "time_s": 13310.0,
+      "trigger": "home_position_reached"
+    },
+    {
+      "action": "land and terminate the mission",
+      "event_type": "landed",
+      "fidelity": "high",
+      "guard": "return-to-base behavior is active and home arrival is confirmed",
+      "provenance_ids": [
+        "provenance-0a7b7db8ac841b2f",
+        "provenance-42fdf13657a78f66",
+        "provenance-edd1aa774c5ac577",
+        "provenance-efc0e36c885509f3",
+        "provenance-f861dc618134fdc1",
+        "provenance-f980041cb9698dee"
+      ],
+      "related_behavior_ids": [
+        "behavior-a7684a40e256a954"
+      ],
+      "related_parameter_ids": [
+        "parameter-d617d6864ad0cef0",
+        "parameter-eab25fb74d9197be",
+        "parameter-6cef2ed5beb33e99"
+      ],
+      "related_requirement_ids": [
+        "requirement-f573675ab7b7a6de",
+        "requirement-cc13b5cf4cd2b56b"
+      ],
+      "state_after": "landed",
+      "state_before": "return_to_base",
+      "time_s": 13310.0,
+      "trigger": "home_position_reached"
+    }
+  ],
+  "low": [
+    {
+      "action": "begin mission while respecting documented operating limits, including max_speed",
+      "event_type": "mission_started",
+      "fidelity": "low",
+      "guard": "required mission evidence is available",
+      "provenance_ids": [
+        "provenance-0a7b7db8ac841b2f",
+        "provenance-42fdf13657a78f66",
+        "provenance-edd1aa774c5ac577",
+        "provenance-efc0e36c885509f3",
+        "provenance-f861dc618134fdc1",
+        "provenance-f980041cb9698dee"
+      ],
+      "related_behavior_ids": [
+        "behavior-a7684a40e256a954"
+      ],
+      "related_parameter_ids": [
+        "parameter-d617d6864ad0cef0",
+        "parameter-eab25fb74d9197be",
+        "parameter-6cef2ed5beb33e99"
+      ],
+      "related_requirement_ids": [
+        "requirement-f573675ab7b7a6de",
+        "requirement-cc13b5cf4cd2b56b"
+      ],
+      "state_after": "mission_flight",
+      "state_before": "preflight",
+      "time_s": 0.0,
+      "trigger": "mission_started"
+    },
+    {
+      "action": "continue mission flight or loiter",
+      "event_type": "mission_waypoint_reached",
+      "fidelity": "low",
+      "guard": "distance_to_waypoint <= arrival_radius",
+      "provenance_ids": [
+        "provenance-0a7b7db8ac841b2f",
+        "provenance-42fdf13657a78f66",
+        "provenance-edd1aa774c5ac577",
+        "provenance-efc0e36c885509f3",
+        "provenance-f861dc618134fdc1",
+        "provenance-f980041cb9698dee"
+      ],
+      "related_behavior_ids": [
+        "behavior-a7684a40e256a954"
+      ],
+      "related_parameter_ids": [
+        "parameter-d617d6864ad0cef0",
+        "parameter-eab25fb74d9197be",
+        "parameter-6cef2ed5beb33e99"
+      ],
+      "related_requirement_ids": [
+        "requirement-f573675ab7b7a6de",
+        "requirement-cc13b5cf4cd2b56b"
+      ],
+      "state_after": "mission_flight",
+      "state_before": "mission_flight",
+      "time_s": 1430.0,
+      "trigger": "mission_waypoint_reached"
+    },
+    {
+      "action": "evaluate low-battery transition",
+      "event_type": "battery_threshold_reached",
+      "fidelity": "low",
+      "guard": "battery_state <= battery_threshold",
+      "provenance_ids": [
+        "provenance-0a7b7db8ac841b2f",
+        "provenance-42fdf13657a78f66",
+        "provenance-edd1aa774c5ac577",
+        "provenance-efc0e36c885509f3",
+        "provenance-f861dc618134fdc1",
+        "provenance-f980041cb9698dee"
+      ],
+      "related_behavior_ids": [
+        "behavior-a7684a40e256a954"
+      ],
+      "related_parameter_ids": [
+        "parameter-d617d6864ad0cef0",
+        "parameter-eab25fb74d9197be",
+        "parameter-6cef2ed5beb33e99"
+      ],
+      "related_requirement_ids": [
+        "requirement-f573675ab7b7a6de",
+        "requirement-cc13b5cf4cd2b56b"
+      ],
+      "state_after": "mission_flight",
+      "state_before": "mission_flight",
+      "time_s": 11510.0,
+      "trigger": "battery_threshold_reached"
+    },
+    {
+      "action": "ReturnToBase",
+      "event_type": "return_to_base_invoked",
+      "fidelity": "low",
+      "guard": "battery_state <= battery_threshold",
+      "provenance_ids": [
+        "provenance-0a7b7db8ac841b2f",
+        "provenance-42fdf13657a78f66",
+        "provenance-edd1aa774c5ac577",
+        "provenance-efc0e36c885509f3",
+        "provenance-f861dc618134fdc1",
+        "provenance-f980041cb9698dee"
+      ],
+      "related_behavior_ids": [
+        "behavior-a7684a40e256a954",
+        "behavior-e0cb3cdea8db55dd"
+      ],
+      "related_parameter_ids": [
+        "parameter-d617d6864ad0cef0",
+        "parameter-eab25fb74d9197be",
+        "parameter-6cef2ed5beb33e99"
+      ],
+      "related_requirement_ids": [
+        "requirement-f573675ab7b7a6de",
+        "requirement-cc13b5cf4cd2b56b"
+      ],
+      "state_after": "return_to_base",
+      "state_before": "mission_flight",
+      "time_s": 11510.0,
+      "trigger": "battery_threshold_reached"
+    },
+    {
+      "action": "confirm home arrival",
+      "event_type": "home_position_reached",
+      "fidelity": "low",
+      "guard": "distance_to_home <= arrival_radius",
+      "provenance_ids": [
+        "provenance-0a7b7db8ac841b2f",
+        "provenance-42fdf13657a78f66",
+        "provenance-edd1aa774c5ac577",
+        "provenance-efc0e36c885509f3",
+        "provenance-f861dc618134fdc1",
+        "provenance-f980041cb9698dee"
+      ],
+      "related_behavior_ids": [
+        "behavior-a7684a40e256a954"
+      ],
+      "related_parameter_ids": [
+        "parameter-d617d6864ad0cef0",
+        "parameter-eab25fb74d9197be",
+        "parameter-6cef2ed5beb33e99"
+      ],
+      "related_requirement_ids": [
+        "requirement-f573675ab7b7a6de",
+        "requirement-cc13b5cf4cd2b56b"
+      ],
+      "state_after": "return_to_base",
+      "state_before": "return_to_base",
+      "time_s": 12950.0,
+      "trigger": "home_position_reached"
+    },
+    {
+      "action": "land and terminate the mission",
+      "event_type": "landed",
+      "fidelity": "low",
+      "guard": "return-to-base behavior is active and home arrival is confirmed",
+      "provenance_ids": [
+        "provenance-0a7b7db8ac841b2f",
+        "provenance-42fdf13657a78f66",
+        "provenance-edd1aa774c5ac577",
+        "provenance-efc0e36c885509f3",
+        "provenance-f861dc618134fdc1",
+        "provenance-f980041cb9698dee"
+      ],
+      "related_behavior_ids": [
+        "behavior-a7684a40e256a954"
+      ],
+      "related_parameter_ids": [
+        "parameter-d617d6864ad0cef0",
+        "parameter-eab25fb74d9197be",
+        "parameter-6cef2ed5beb33e99"
+      ],
+      "related_requirement_ids": [
+        "requirement-f573675ab7b7a6de",
+        "requirement-cc13b5cf4cd2b56b"
+      ],
+      "state_after": "landed",
+      "state_before": "return_to_base",
+      "time_s": 12950.0,
+      "trigger": "home_position_reached"
+    }
+  ]
+}

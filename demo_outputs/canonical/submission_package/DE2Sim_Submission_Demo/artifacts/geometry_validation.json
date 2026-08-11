@@ -1,0 +1,30 @@
+{
+  "dimension_checks": {
+    "x": {
+      "extracted": 1.2,
+      "parameter_id": "parameter-cb1823af29e29a01",
+      "passed": true
+    },
+    "y": {
+      "extracted": 1.2,
+      "parameter_id": "parameter-f925806b3ec7f538",
+      "passed": true
+    },
+    "z": {
+      "extracted": 0.24,
+      "parameter_id": "parameter-81c5727323f02772",
+      "passed": true
+    }
+  },
+  "errors": [],
+  "geometry_id": "geometry-442731f9c74c1b85",
+  "schema_version": "de2sim.geometry_validation.v1",
+  "source_hash": "a480ea2f2c1951975008d48747d41bc6f7b65fa2483f2033b38801fe2c144ea1",
+  "tolerances": {
+    "absolute": 1e-06,
+    "relative": 1e-09
+  },
+  "valid": true,
+  "validation_status": "passed",
+  "warnings": []
+}

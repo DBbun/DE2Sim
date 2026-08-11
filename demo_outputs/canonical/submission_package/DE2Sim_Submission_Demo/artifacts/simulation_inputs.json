@@ -1,0 +1,182 @@
+{
+  "asot_facts": {
+    "approved_behavior_id": "behavior-a7684a40e256a954",
+    "approved_behavior_name": "Low Battery Return-to-Base",
+    "asot_id": "asot-ff9303a51b9d5967",
+    "battery_capacity_wh": 4800.0,
+    "battery_threshold_percent": 20.0,
+    "geometry": {
+      "geometry_authoritativeness": "not_vendor_authoritative",
+      "geometry_dimensions": {
+        "x": 1.2,
+        "y": 1.2,
+        "z": 0.24
+      },
+      "geometry_id": "geometry-442731f9c74c1b85",
+      "geometry_source_format": "ascii_stl",
+      "geometry_unit": "m",
+      "geometry_used_for_flight_dynamics": false,
+      "geometry_used_for_visualization": true
+    },
+    "max_speed_mps": 25.0,
+    "parameter_ids": {
+      "battery_capacity": "parameter-eab25fb74d9197be",
+      "battery_threshold": "parameter-d617d6864ad0cef0",
+      "max_speed": "parameter-6cef2ed5beb33e99"
+    },
+    "provenance_ids": [
+      "provenance-0a7b7db8ac841b2f",
+      "provenance-42fdf13657a78f66",
+      "provenance-edd1aa774c5ac577",
+      "provenance-efc0e36c885509f3",
+      "provenance-f861dc618134fdc1",
+      "provenance-f980041cb9698dee"
+    ],
+    "requirement_ids": {
+      "low_battery_return": "requirement-f573675ab7b7a6de",
+      "maximum_speed": "requirement-cc13b5cf4cd2b56b"
+    },
+    "return_to_base_action": "ReturnToBase",
+    "source_return_to_base_behavior_id": "behavior-e0cb3cdea8db55dd",
+    "title": "DBbun-DE2Sim-DemoUAS-Geometry",
+    "transition_sequence": [
+      {
+        "action": "begin mission while respecting documented operating limits, including max_speed",
+        "from": "preflight",
+        "guard": "required mission evidence is available",
+        "to": "mission_flight",
+        "trigger": "mission_started"
+      },
+      {
+        "action": "invoke the explicit source-derived ReturnToBase behavior",
+        "from": "mission_flight",
+        "guard": "battery_state <= battery_threshold",
+        "to": "return_to_base",
+        "trigger": "battery_threshold_reached"
+      },
+      {
+        "action": "land and terminate the mission",
+        "from": "return_to_base",
+        "guard": "return-to-base behavior is active and home arrival is confirmed",
+        "to": "landed",
+        "trigger": "home_position_reached"
+      }
+    ]
+  },
+  "geometry_authoritativeness": "not_vendor_authoritative",
+  "geometry_dimensions": {
+    "x": 1.2,
+    "y": 1.2,
+    "z": 0.24
+  },
+  "geometry_id": "geometry-442731f9c74c1b85",
+  "geometry_source_format": "ascii_stl",
+  "geometry_unit": "m",
+  "geometry_used_for_flight_dynamics": false,
+  "geometry_used_for_visualization": true,
+  "scenario": {
+    "acceleration_limit_mps2": {
+      "explanation": "Acceleration limit used to smooth the high-fidelity velocity response.",
+      "source_classification": "demonstration_assumption",
+      "unit": "m/s^2",
+      "value": 2.0
+    },
+    "arrival_radius_m": {
+      "explanation": "Arrival radius used for waypoint and home confirmation.",
+      "source_classification": "demonstration_assumption",
+      "unit": "m",
+      "value": 75.0
+    },
+    "high_fidelity_idle_power_w": {
+      "explanation": "Idle power used by the demonstrative point-mass model.",
+      "source_classification": "demonstration_assumption",
+      "unit": "W",
+      "value": 1140.0
+    },
+    "high_fidelity_speed_power_coefficient": {
+      "explanation": "Quadratic speed power coefficient for the demonstrative point-mass model.",
+      "source_classification": "demonstration_assumption",
+      "unit": "W/(m/s)^2",
+      "value": 0.3
+    },
+    "high_fidelity_time_step_s": {
+      "explanation": "Fixed high-fidelity integration time step.",
+      "source_classification": "demonstration_assumption",
+      "unit": "s",
+      "value": 2.0
+    },
+    "home_x_m": {
+      "explanation": "Home position x coordinate for the demonstration scenario.",
+      "source_classification": "demonstration_assumption",
+      "unit": "m",
+      "value": 0.0
+    },
+    "home_y_m": {
+      "explanation": "Home position y coordinate for the demonstration scenario.",
+      "source_classification": "demonstration_assumption",
+      "unit": "m",
+      "value": 0.0
+    },
+    "initial_battery_percent": {
+      "explanation": "Initial state of charge for the demonstration run.",
+      "source_classification": "demonstration_assumption",
+      "unit": "percent",
+      "value": 100.0
+    },
+    "low_fidelity_time_step_s": {
+      "explanation": "Fixed low-fidelity integration time step.",
+      "source_classification": "demonstration_assumption",
+      "unit": "s",
+      "value": 10.0
+    },
+    "maximum_simulation_time_s": {
+      "explanation": "Deterministic safety limit for simulation termination.",
+      "source_classification": "demonstration_assumption",
+      "unit": "s",
+      "value": 20000.0
+    },
+    "mission_waypoint_x_m": {
+      "explanation": "Mission waypoint x coordinate chosen to exercise return-to-base behavior while leaving landing reserve.",
+      "source_classification": "demonstration_assumption",
+      "unit": "m",
+      "value": 36000.0
+    },
+    "mission_waypoint_y_m": {
+      "explanation": "Mission waypoint y coordinate chosen to keep path interpretation simple.",
+      "source_classification": "demonstration_assumption",
+      "unit": "m",
+      "value": 0.0
+    },
+    "nominal_power_draw_w": {
+      "explanation": "Low-fidelity constant power draw assumption.",
+      "source_classification": "demonstration_assumption",
+      "unit": "W",
+      "value": 1200.0
+    },
+    "playback_seconds_per_simulation_second": {
+      "explanation": "Default viewer playback scale selected to show the complete demonstration mission in roughly 20 to 45 seconds.",
+      "source_classification": "demonstration_assumption",
+      "unit": "s/s",
+      "value": 0.0025
+    },
+    "scenario_id": {
+      "explanation": "Stable deterministic demonstration scenario identifier.",
+      "source_classification": "demonstration_assumption",
+      "unit": "identifier",
+      "value": "deterministic-demo-uAS-phase5a"
+    },
+    "wind_x_mps": {
+      "explanation": "Constant wind disturbance x component for the high-fidelity model.",
+      "source_classification": "demonstration_assumption",
+      "unit": "m/s",
+      "value": -2.0
+    },
+    "wind_y_mps": {
+      "explanation": "Constant wind disturbance y component for the high-fidelity model.",
+      "source_classification": "demonstration_assumption",
+      "unit": "m/s",
+      "value": 0.5
+    }
+  },
+  "simulation_run_id": "simulation-run-737b9d34a81ba0b6"
+}

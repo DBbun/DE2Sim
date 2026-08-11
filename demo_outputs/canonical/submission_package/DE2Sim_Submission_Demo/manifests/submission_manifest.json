@@ -1,0 +1,476 @@
+{
+  "files": [
+    {
+      "artifact_category": "launcher",
+      "description": "Windows launcher",
+      "generated_or_source_derived": "generated",
+      "relative_path": "Launch_DE2Sim_Demo.bat",
+      "required_or_optional": "required",
+      "sha256": "4bdbe58182dafe5b8e7e8d17358f69de333848462d9a6cdfb0b9748c13cb4adc",
+      "size": 215,
+      "stage": "demo"
+    },
+    {
+      "artifact_category": "report",
+      "description": "Demo README",
+      "generated_or_source_derived": "generated",
+      "relative_path": "README_DEMO.md",
+      "required_or_optional": "required",
+      "sha256": "9cbdb4fa10e68edbad4e07c3931367623f3a9a366b2d867c61b3bdf91a8bdc5a",
+      "size": 662,
+      "stage": "demo"
+    },
+    {
+      "artifact_category": "artifact",
+      "description": "AI contribution manifest",
+      "generated_or_source_derived": "generated",
+      "relative_path": "artifacts/ai_contribution_manifest.json",
+      "required_or_optional": "optional",
+      "sha256": "9948db8c2b28e0c8ce8a4ce46fb8a309145376d557975073c50d4d613a7a262e",
+      "size": 2013,
+      "stage": "ai_evidence"
+    },
+    {
+      "artifact_category": "artifact",
+      "description": "Generated ASOT",
+      "generated_or_source_derived": "source-derived",
+      "relative_path": "artifacts/asot.json",
+      "required_or_optional": "required",
+      "sha256": "351055bd8b00493dd5833f8e959102ed239cbeb4e5c6171f400254a5adf22f75",
+      "size": 24684,
+      "stage": "asot"
+    },
+    {
+      "artifact_category": "artifact",
+      "description": "ASOT validation",
+      "generated_or_source_derived": "source-derived",
+      "relative_path": "artifacts/asot_validation.json",
+      "required_or_optional": "required",
+      "sha256": "0849d5bd8fd91a7f9aeb14fdef11ab1f2b1eb61b469b07bcb91d1ab1bed964e7",
+      "size": 245,
+      "stage": "asot"
+    },
+    {
+      "artifact_category": "artifact",
+      "description": "Approved ASOT",
+      "generated_or_source_derived": "source-derived",
+      "relative_path": "artifacts/asot_with_approved_behaviors.json",
+      "required_or_optional": "required",
+      "sha256": "d174f6914492085d8098cbf2d80b731f21248e648a8c84467315c4ea2e0f9c44",
+      "size": 33290,
+      "stage": "human_approval"
+    },
+    {
+      "artifact_category": "artifact",
+      "description": "Behavior decisions",
+      "generated_or_source_derived": "source-derived",
+      "relative_path": "artifacts/behavior_decisions.json",
+      "required_or_optional": "required",
+      "sha256": "0a04311998f7880ca8b501fb40c310bc8c7d28c1a8d07d0cf1669f50852920ed",
+      "size": 509,
+      "stage": "human_approval"
+    },
+    {
+      "artifact_category": "artifact",
+      "description": "Behavior prompt",
+      "generated_or_source_derived": "source-derived",
+      "relative_path": "artifacts/behavior_prompt.json",
+      "required_or_optional": "required",
+      "sha256": "d5210549965bc47726e590fc8653a89b2757b304d768234b318d7f1c7b7a1b94",
+      "size": 18362,
+      "stage": "behavior_proposal"
+    },
+    {
+      "artifact_category": "artifact",
+      "description": "Behavior proposals",
+      "generated_or_source_derived": "source-derived",
+      "relative_path": "artifacts/behavior_proposals.json",
+      "required_or_optional": "required",
+      "sha256": "c5a2a46e64c5a7b6e121cc5b45c0fdedcbe2d97ad64f441996f96915eadad989",
+      "size": 14245,
+      "stage": "behavior_proposal"
+    },
+    {
+      "artifact_category": "artifact",
+      "description": "External generation audit",
+      "generated_or_source_derived": "generated",
+      "relative_path": "artifacts/external_generation_audit.json",
+      "required_or_optional": "optional",
+      "sha256": "5ef2f329105a3a2665305bb2a4c9fbdbbdfd479d7b24a8459e49da3063dcdaaa",
+      "size": 5318,
+      "stage": "ai_evidence"
+    },
+    {
+      "artifact_category": "artifact",
+      "description": "Geometry extraction",
+      "generated_or_source_derived": "generated",
+      "relative_path": "artifacts/geometry_extraction.json",
+      "required_or_optional": "optional",
+      "sha256": "7978126ee671077ff16c3e16589fd4cdf10d576c0a68c05a6dc48dfd24eafe12",
+      "size": 51725,
+      "stage": "geometry"
+    },
+    {
+      "artifact_category": "artifact",
+      "description": "Geometry linkage report",
+      "generated_or_source_derived": "generated",
+      "relative_path": "artifacts/geometry_linkage_report.json",
+      "required_or_optional": "optional",
+      "sha256": "4715a37a16ac4d02dc18cbace013d705bc6e53b71f2aeab4994963d1038aef38",
+      "size": 593,
+      "stage": "geometry"
+    },
+    {
+      "artifact_category": "artifact",
+      "description": "Geometry browser scene",
+      "generated_or_source_derived": "generated",
+      "relative_path": "artifacts/geometry_scene.json",
+      "required_or_optional": "optional",
+      "sha256": "044d6daba9a1536af284b20002306ec9e8b8b40f81ac8bf4d230ebd8ba7ea176",
+      "size": 43352,
+      "stage": "geometry"
+    },
+    {
+      "artifact_category": "artifact",
+      "description": "Geometry validation",
+      "generated_or_source_derived": "generated",
+      "relative_path": "artifacts/geometry_validation.json",
+      "required_or_optional": "optional",
+      "sha256": "cef0bb24ac190192f035a22fd9ae8e2c2381606e84d2c804d2e2cdab1ddf86c2",
+      "size": 713,
+      "stage": "geometry"
+    },
+    {
+      "artifact_category": "artifact",
+      "description": "Ollama model output diagnostics",
+      "generated_or_source_derived": "generated",
+      "relative_path": "artifacts/ollama_model_output.json",
+      "required_or_optional": "optional",
+      "sha256": "a4faa99c8d532cb6c579a736c8c79e711c28ee333decce147b46045db915db4f",
+      "size": 886,
+      "stage": "ai_evidence"
+    },
+    {
+      "artifact_category": "artifact",
+      "description": "Package manifest",
+      "generated_or_source_derived": "source-derived",
+      "relative_path": "artifacts/package_manifest.json",
+      "required_or_optional": "required",
+      "sha256": "b79cb4c00cbd3f5388e2e8c73d1a9511190800d0ffea9aa3ded6651edf854fa3",
+      "size": 3059,
+      "stage": "ingestion"
+    },
+    {
+      "artifact_category": "artifact",
+      "description": "Parsed artifacts",
+      "generated_or_source_derived": "source-derived",
+      "relative_path": "artifacts/parsed_artifacts.json",
+      "required_or_optional": "required",
+      "sha256": "4c928f1159ea254b0df5180256ff68807114f83bc6a42d0f9fe151e61f50d365",
+      "size": 78302,
+      "stage": "parsing"
+    },
+    {
+      "artifact_category": "artifact",
+      "description": "Provenance manifest",
+      "generated_or_source_derived": "source-derived",
+      "relative_path": "artifacts/provenance_manifest.json",
+      "required_or_optional": "required",
+      "sha256": "8108ca8d769ed8b04f89cda27ad7546055675f2a53a2ae4e48d254055118f632",
+      "size": 16373,
+      "stage": "provenance"
+    },
+    {
+      "artifact_category": "artifact",
+      "description": "Requirement evaluation",
+      "generated_or_source_derived": "generated",
+      "relative_path": "artifacts/requirements_evaluation.json",
+      "required_or_optional": "required",
+      "sha256": "2fb8b2a91429f1d4bfd6990335a9c83f1d176b490fc2debaccedf8e2d2697e23",
+      "size": 1651,
+      "stage": "requirement_evidence"
+    },
+    {
+      "artifact_category": "artifact",
+      "description": "Simulation data bundle",
+      "generated_or_source_derived": "generated",
+      "relative_path": "artifacts/simulation_data.json",
+      "required_or_optional": "required",
+      "sha256": "2fe0381c48476524a8387296652ce5ed53975b8baad449d5685cb82cc1843be5",
+      "size": 8464319,
+      "stage": "simulation"
+    },
+    {
+      "artifact_category": "artifact",
+      "description": "Simulation events",
+      "generated_or_source_derived": "generated",
+      "relative_path": "artifacts/simulation_events.json",
+      "required_or_optional": "required",
+      "sha256": "9e79e4910568a0efd04d9dc8cf66f509b1dec37ab4a47ff140232c5fc70b387f",
+      "size": 11634,
+      "stage": "simulation"
+    },
+    {
+      "artifact_category": "artifact",
+      "description": "Simulation inputs",
+      "generated_or_source_derived": "generated",
+      "relative_path": "artifacts/simulation_inputs.json",
+      "required_or_optional": "required",
+      "sha256": "feec93c45339968b7cd2f008048aaa639d42c36077c3b7da2f0e862d64537d18",
+      "size": 6536,
+      "stage": "simulation"
+    },
+    {
+      "artifact_category": "artifact",
+      "description": "Simulation model",
+      "generated_or_source_derived": "generated",
+      "relative_path": "artifacts/simulation_model.json",
+      "required_or_optional": "required",
+      "sha256": "f72dcb541a9d5e51945b3eadb03efa7be8aa46618abbc721040e39eec13e4dd5",
+      "size": 2491,
+      "stage": "simulation"
+    },
+    {
+      "artifact_category": "artifact",
+      "description": "Source STL geometry",
+      "generated_or_source_derived": "source-derived",
+      "relative_path": "artifacts/source_geometry/demo_uas.stl",
+      "required_or_optional": "required",
+      "sha256": "a480ea2f2c1951975008d48747d41bc6f7b65fa2483f2033b38801fe2c144ea1",
+      "size": 27049,
+      "stage": "geometry"
+    },
+    {
+      "artifact_category": "artifact",
+      "description": "High-fidelity telemetry",
+      "generated_or_source_derived": "generated",
+      "relative_path": "artifacts/telemetry_high.csv",
+      "required_or_optional": "required",
+      "sha256": "d7dc89993e2f527adcb3e9ca8620856b098080114908dda46b84d7ec947ee453",
+      "size": 650602,
+      "stage": "simulation"
+    },
+    {
+      "artifact_category": "artifact",
+      "description": "Low-fidelity telemetry",
+      "generated_or_source_derived": "generated",
+      "relative_path": "artifacts/telemetry_low.csv",
+      "required_or_optional": "required",
+      "sha256": "fe078acfd2576758299fe0226c4b11b2be5bdb88165c6e0a6d2916b48521f936",
+      "size": 117156,
+      "stage": "simulation"
+    },
+    {
+      "artifact_category": "artifact",
+      "description": "Traceability report",
+      "generated_or_source_derived": "source-derived",
+      "relative_path": "artifacts/traceability_report.json",
+      "required_or_optional": "required",
+      "sha256": "d21f3783e6f2544014f43b0b4b1a55d55469c13b82a255fee2aa998452e2307b",
+      "size": 632,
+      "stage": "traceability"
+    },
+    {
+      "artifact_category": "dashboard",
+      "description": "Integrated dashboard",
+      "generated_or_source_derived": "generated",
+      "relative_path": "demo_dashboard.html",
+      "required_or_optional": "required",
+      "sha256": "df9467eed1abbf9c7de7a649b5467eeee23664675a7107065054e659065e3bd1",
+      "size": 17521,
+      "stage": "demo"
+    },
+    {
+      "artifact_category": "manifest",
+      "description": "Reproducibility report",
+      "generated_or_source_derived": "generated",
+      "relative_path": "manifests/reproducibility_report.json",
+      "required_or_optional": "required",
+      "sha256": "916d400b15981cb5d1111b1e65ccd68fcab9f814f7e41fdacd1393f03629327a",
+      "size": 7367,
+      "stage": "reproducibility"
+    },
+    {
+      "artifact_category": "manifest",
+      "description": "Submission manifest",
+      "generated_or_source_derived": "generated",
+      "relative_path": "manifests/submission_manifest.json",
+      "required_or_optional": "required",
+      "sha256": "34c9f3dfbdfa584518b82fa0c9a37e931b8c1a0366b71c948629e9f1012860c2",
+      "size": 17584,
+      "stage": "demo"
+    },
+    {
+      "artifact_category": "report",
+      "description": "AI generation evidence",
+      "generated_or_source_derived": "generated",
+      "relative_path": "reports/ai_generation_evidence.json",
+      "required_or_optional": "required",
+      "sha256": "be7d8fec3cbb5cccee2094e23a0435c00d6fab02c6445667d80ac82e6d1b4385",
+      "size": 4708,
+      "stage": "ai_evidence"
+    },
+    {
+      "artifact_category": "report",
+      "description": "ASOT summary",
+      "generated_or_source_derived": "source-derived",
+      "relative_path": "reports/asot_summary.md",
+      "required_or_optional": "required",
+      "sha256": "354b5f0bbfe090ae76be1e6e62526e0bf8db2ea5a15bcbdcf4721d7d59a5d010",
+      "size": 871,
+      "stage": "asot"
+    },
+    {
+      "artifact_category": "report",
+      "description": "Behavior approval report",
+      "generated_or_source_derived": "source-derived",
+      "relative_path": "reports/behavior_approval_report.json",
+      "required_or_optional": "required",
+      "sha256": "1b4f472b903623fdb73c9e7c3e3cfe83b5559b4c72b736d4b7700d5dcc8b9de9",
+      "size": 835,
+      "stage": "human_approval"
+    },
+    {
+      "artifact_category": "report",
+      "description": "Challenge alignment",
+      "generated_or_source_derived": "generated",
+      "relative_path": "reports/challenge_alignment.md",
+      "required_or_optional": "required",
+      "sha256": "46c93f1860e665abf2ad2386429042bb109fbdba9466461491bf477af5d40b92",
+      "size": 1358,
+      "stage": "demo"
+    },
+    {
+      "artifact_category": "report",
+      "description": "Demo script",
+      "generated_or_source_derived": "generated",
+      "relative_path": "reports/demo_script.md",
+      "required_or_optional": "required",
+      "sha256": "a5f906d03505fea983177f3522bc316ec9c8fc86a6cb7f0c6ad12ac9ea0a181c",
+      "size": 1443,
+      "stage": "demo"
+    },
+    {
+      "artifact_category": "report",
+      "description": "Evidence matrix",
+      "generated_or_source_derived": "generated",
+      "relative_path": "reports/evidence_matrix.csv",
+      "required_or_optional": "required",
+      "sha256": "0c1dd3278dc0fcb77da79c5e27f1f041269f947cd7421c2faf7a6ea495af8598",
+      "size": 1100,
+      "stage": "demo"
+    },
+    {
+      "artifact_category": "report",
+      "description": "External generation summary",
+      "generated_or_source_derived": "generated",
+      "relative_path": "reports/external_generation_summary.md",
+      "required_or_optional": "optional",
+      "sha256": "8e3228ea9ad50340751e9492004c0a8a67762bbeaa74d43cddbeefa3bdc05dc7",
+      "size": 351,
+      "stage": "ai_evidence"
+    },
+    {
+      "artifact_category": "report",
+      "description": "Fidelity comparison",
+      "generated_or_source_derived": "generated",
+      "relative_path": "reports/fidelity_comparison.json",
+      "required_or_optional": "required",
+      "sha256": "9c22b518c4cc2971b4a54747320599e690c01084ad6be272fc1efa9e1d9e0a04",
+      "size": 4320,
+      "stage": "simulation"
+    },
+    {
+      "artifact_category": "report",
+      "description": "Geometry integration summary",
+      "generated_or_source_derived": "generated",
+      "relative_path": "reports/geometry_integration_summary.md",
+      "required_or_optional": "required",
+      "sha256": "ce57e1dd302ecb6d320dd8a8d85ffad75efda67989ccb683796e1e80c96d4bff",
+      "size": 1335,
+      "stage": "geometry"
+    },
+    {
+      "artifact_category": "report",
+      "description": "Simulation summary",
+      "generated_or_source_derived": "generated",
+      "relative_path": "reports/simulation_summary.md",
+      "required_or_optional": "required",
+      "sha256": "295591cc7b06c63f9a75d3645415e6f4f54a422f16fc7cc8ffd779fe89320a95",
+      "size": 3566,
+      "stage": "simulation"
+    },
+    {
+      "artifact_category": "report",
+      "description": "Technical summary",
+      "generated_or_source_derived": "generated",
+      "relative_path": "reports/technical_summary.md",
+      "required_or_optional": "required",
+      "sha256": "5667419e3811d15756debc0ceb38ef723124afb072704f351fd8c7b6a7530d25",
+      "size": 2354,
+      "stage": "demo"
+    },
+    {
+      "artifact_category": "report",
+      "description": "Traceability markdown",
+      "generated_or_source_derived": "source-derived",
+      "relative_path": "reports/traceability_report.md",
+      "required_or_optional": "required",
+      "sha256": "202938c4b56f653821dcbf6b251478eb049562b64b538f0d8f84f4fa377fe63f",
+      "size": 1090,
+      "stage": "traceability"
+    },
+    {
+      "artifact_category": "source",
+      "description": "Original engineering ZIP",
+      "generated_or_source_derived": "source-derived",
+      "relative_path": "source_package/DBbun-DE2Sim-DemoUAS-Geometry.zip",
+      "required_or_optional": "required",
+      "sha256": "83c21ca8e033487d08800c5008fa040ee5ea1cc36a0bd9ddd11d8363381e88b9",
+      "size": 30551,
+      "stage": "engineering_package"
+    },
+    {
+      "artifact_category": "viewer",
+      "description": "ASOT traceability viewer",
+      "generated_or_source_derived": "generated",
+      "relative_path": "viewers/asot_traceability_viewer.html",
+      "required_or_optional": "required",
+      "sha256": "1941f2e59fb280592c778cb3cb4599f7c4240ec9dd2b0cf6deeb15d17e70564d",
+      "size": 102186,
+      "stage": "traceability"
+    },
+    {
+      "artifact_category": "viewer",
+      "description": "Behavior review viewer",
+      "generated_or_source_derived": "source-derived",
+      "relative_path": "viewers/behavior_review.html",
+      "required_or_optional": "required",
+      "sha256": "04a3df64da21de705fa760d9749b64c8d7e639460220fe0758f1c570d5e6b3b0",
+      "size": 27423,
+      "stage": "behavior_proposal"
+    },
+    {
+      "artifact_category": "viewer",
+      "description": "Geometry viewer",
+      "generated_or_source_derived": "generated",
+      "relative_path": "viewers/geometry_viewer.html",
+      "required_or_optional": "optional",
+      "sha256": "1fd84ba95f39818a222a51723d563be262958edd279a2696ab3dba3c0d6ffb8e",
+      "size": 25754,
+      "stage": "geometry"
+    },
+    {
+      "artifact_category": "viewer",
+      "description": "Simulation playback viewer",
+      "generated_or_source_derived": "generated",
+      "relative_path": "viewers/simulation_viewer.html",
+      "required_or_optional": "required",
+      "sha256": "36f94a25a53234c0f0952b299ad3e6ecc4534a1e0910f0907b69644a795abdb0",
+      "size": 4119806,
+      "stage": "simulation"
+    }
+  ],
+  "package_root": "DE2Sim_Submission_Demo",
+  "schema_version": "de2sim.demo_package.v1"
+}
