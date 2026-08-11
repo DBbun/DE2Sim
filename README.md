@@ -14,6 +14,61 @@ as a self-contained, offline-runnable browser demo.
 Originally developed for the Army Training Verse Prize Challenge II
 ("Intelligent Simulation Pipeline").
 
+## Getting the Code
+
+```bash
+git clone https://github.com/DBbun/DE2Sim.git
+cd DE2Sim
+```
+
+To pick up later changes in an existing clone:
+
+```bash
+git pull origin master
+```
+
+## Setup
+
+- Python 3.10 or later. The core `de2sim` package is standard-library
+  only — no `pip install` required to run the pipeline itself.
+- The legacy `paper_to_simulator_builder_v3_4.py` script referenced in
+  earlier project history has been removed from this repository; it is
+  not part of the current `de2sim` pipeline and is not needed to run
+  anything below.
+- Optional: to use a local generative-AI provider for behavior
+  enrichment (`--ai-provider ollama`), install and run
+  [Ollama](https://ollama.com) separately and pull a model (e.g.
+  `ollama pull gemma3:4b`). Everything else, including the default
+  `--ai-provider offline` mode, needs no external services.
+
+## Quickstart
+
+The repo ships a working example engineering package, so you can run the
+full pipeline immediately without preparing your own input:
+
+```bash
+python -m de2sim.cli.challenge_pipeline \
+  --engineering-package demo_outputs/canonical/engineering_package/DBbun-DE2Sim-DemoUAS-Geometry.zip \
+  --output out --build-asot
+python -m de2sim.cli.challenge_pipeline --output out --propose-behaviors
+python -m de2sim.cli.challenge_pipeline --output out --apply-behavior-decisions out/behavior_decisions.json
+python -m de2sim.cli.challenge_pipeline --output out --build-simulation
+python -m de2sim.cli.challenge_pipeline --output out --build-demo-package
+```
+
+The last step writes a self-contained package under `out/` — open its
+`demo_dashboard.html` in any browser to see the result (no server, no
+internet connection needed). To skip running the pipeline yourself
+entirely, the same kind of output is already built and viewable at the
+[live demo](https://dbbun.github.io/DE2Sim/) or under
+`demo_outputs/canonical/submission_package/`.
+
+## Running Tests
+
+```bash
+python -m unittest discover -s tests
+```
+
 ## Layout
 
 - `de2sim/` — the pipeline package (ingest, geometry, ASOT, provenance,
@@ -21,10 +76,14 @@ Originally developed for the Army Training Verse Prize Challenge II
 - `docs/` — architecture notes and phase-by-phase build documentation.
 - `tests/` — unit tests for each pipeline stage.
 - `demo_outputs/canonical/` — canonical example run: the source engineering
-  package, local-AI/ASOT output, simulation output, and the final packaged
-  submission demo (open `submission_package/DE2Sim_Submission_Demo.zip`,
-  extract, and open `demo_dashboard.html` — no Python, internet, or GPU
-  required to view it).
+  package (also used by the Quickstart above), local-AI/ASOT output,
+  simulation output, and the final packaged submission demo (open
+  `submission_package/DE2Sim_Submission_Demo.zip`, extract, and open
+  `demo_dashboard.html` — no Python, internet, or GPU required to view
+  it). The interactive `simulation_viewer.html` lives only under
+  `submission_package/.../viewers/` to avoid duplicating an ~4 MB file;
+  `simulation_output/` keeps the underlying JSON/CSV data without a
+  second copy of the viewer.
 
 ## How to Add Engineering Data
 

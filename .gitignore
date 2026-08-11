@@ -1,3 +1,29 @@
 __pycache__/
 *.py[cod]
 build/
+
+# Local-only historical/obsolete folders consolidated here for filesystem
+# tidiness (see chat history) — not part of the tracked project; never
+# intended for git or GitHub.
+/DBbun-DE2Sim-BACKUP/
+/DBbun-DE2Sim-DemoApprovedOutput/
+/DBbun-DE2Sim-DemoBehaviorOutput/
+/DBbun-DE2Sim-DemoGeometryLocalAIOutput/
+/DBbun-DE2Sim-DemoGeometryPackageOutput/
+/DBbun-DE2Sim-DemoGeometryRegenerated/
+/DBbun-DE2Sim-DemoGeometryRegenerated2/
+/DBbun-DE2Sim-DemoGeometrySimulationOutput/
+/DBbun-DE2Sim-DemoInput/
+/DBbun-DE2Sim-DemoLocalAIOutput/
+/DBbun-DE2Sim-DemoLocalAIOutput2/
+/DBbun-DE2Sim-DemoLocalAIOutput3/
+/DBbun-DE2Sim-DemoLocalAIOutput4/
+/DBbun-DE2Sim-DemoLocalAIPackageOutput/
+/DBbun-DE2Sim-DemoLocalAISimulationOutput/
+/DBbun-DE2Sim-DemoOutput/
+/DBbun-DE2Sim-DemoPackage-A/
+/DBbun-DE2Sim-DemoPackage-B/
+/DBbun-DE2Sim-DemoPackageOutput/
+/DBbun-DE2Sim-DemoSimulationOutput/
+/DBbun-DE2Sim-DemoUAS-Geometry.zip
+/DBbun-DE2Sim-DemoUAS.zip
