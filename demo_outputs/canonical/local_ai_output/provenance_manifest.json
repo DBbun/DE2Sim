@@ -1,0 +1,455 @@
+{
+  "schema_version": "de2sim.provenance_manifest.v1",
+  "asot_id": "asot-ff9303a51b9d5967",
+  "source_package_filename": "DBbun-DE2Sim-DemoUAS-Geometry.zip",
+  "source_package_sha256": "83c21ca8e033487d08800c5008fa040ee5ea1cc36a0bd9ddd11d8363381e88b9",
+  "package_manifest_sha256": "55da6fa914c7a5cf42ca1a324a011b262129535852eee82a1a72786cdae7a6db",
+  "parsed_artifacts_sha256": "4612686ceccc1c25d4cfd848fb5f47ee073c294b4ed2f87e3f88c40e5582b2bd",
+  "asot_sha256": "cbab045f7e3d2270656b89f1bc3d8a4333c392173611fe32bdce9da6d40eeb06",
+  "generated_at_utc": "2026-07-16T18:04:32Z",
+  "provenance_records": [
+    {
+      "provenance_id": "provenance-01d582db9ae79306",
+      "source_relative_path": "sysml/demo_uas.sysml",
+      "source_sha256": "09afd2a5e3764dbd5e14849493d204f0482a51472ebdd7e3f97880e07b6e193a",
+      "source_role": "sysml",
+      "parser_name": "sysml_v2_reader.phase1b",
+      "parser_status": "parsed",
+      "source_locator": "line:6",
+      "evidence_type": "sysml_line",
+      "evidence_text": "battery",
+      "confidence": 1.0,
+      "target_entity_ids": [
+        "component-bbcc380b39f7d6ad"
+      ],
+      "warnings": []
+    },
+    {
+      "provenance_id": "provenance-0389e627d04adc56",
+      "source_relative_path": "sysml/demo_uas.sysml",
+      "source_sha256": "09afd2a5e3764dbd5e14849493d204f0482a51472ebdd7e3f97880e07b6e193a",
+      "source_role": "sysml",
+      "parser_name": "sysml_v2_reader.phase1b",
+      "parser_status": "parsed",
+      "source_locator": "line:8",
+      "evidence_type": "sysml_line",
+      "evidence_text": "battery_state",
+      "confidence": 1.0,
+      "target_entity_ids": [],
+      "warnings": []
+    },
+    {
+      "provenance_id": "provenance-0a7b7db8ac841b2f",
+      "source_relative_path": "parameters/parameters.csv",
+      "source_sha256": "51f002761ff4d89fc4a535aeeafcee44c02977f298ebe58b5760b710c815c0a6",
+      "source_role": "parameters",
+      "parser_name": "parameter_reader.phase1b",
+      "parser_status": "parsed",
+      "source_locator": "row:4",
+      "evidence_type": "csv_row",
+      "evidence_text": "Nominal battery capacity",
+      "confidence": 1.0,
+      "target_entity_ids": [
+        "parameter-eab25fb74d9197be"
+      ],
+      "warnings": []
+    },
+    {
+      "provenance_id": "provenance-0cc2d806524cf1dc",
+      "source_relative_path": "sysml/demo_uas.sysml",
+      "source_sha256": "09afd2a5e3764dbd5e14849493d204f0482a51472ebdd7e3f97880e07b6e193a",
+      "source_role": "sysml",
+      "parser_name": "sysml_v2_reader.phase1b",
+      "parser_status": "parsed",
+      "source_locator": "line:1",
+      "evidence_type": "sysml_line",
+      "evidence_text": "DemoUAS",
+      "confidence": 1.0,
+      "target_entity_ids": [
+        "component-65c79176492bd9b2"
+      ],
+      "warnings": []
+    },
+    {
+      "provenance_id": "provenance-2e49c21b631a9c0b",
+      "source_relative_path": "parameters/geometry_parameters.csv",
+      "source_sha256": "34aa3e0a755cbe0f3faed88633a4bdede34404100d0b0e26bcdda46dc550c09c",
+      "source_role": "parameters",
+      "parser_name": "parameter_reader.phase1b",
+      "parser_status": "parsed",
+      "source_locator": "row:3",
+      "evidence_type": "csv_row",
+      "evidence_text": "Demonstration assumption for STL bounding-box y dimension; not vendor data.",
+      "confidence": 1.0,
+      "target_entity_ids": [
+        "parameter-f925806b3ec7f538"
+      ],
+      "warnings": []
+    },
+    {
+      "provenance_id": "provenance-384ad9f875ccf0dc",
+      "source_relative_path": "sysml/demo_uas.sysml",
+      "source_sha256": "09afd2a5e3764dbd5e14849493d204f0482a51472ebdd7e3f97880e07b6e193a",
+      "source_role": "sysml",
+      "parser_name": "sysml_v2_reader.phase1b",
+      "parser_status": "parsed",
+      "source_locator": "line:2",
+      "evidence_type": "sysml_line",
+      "evidence_text": "Airframe",
+      "confidence": 1.0,
+      "target_entity_ids": [
+        "component-359fd778cafe85fe"
+      ],
+      "warnings": []
+    },
+    {
+      "provenance_id": "provenance-42fdf13657a78f66",
+      "source_relative_path": "requirements/requirements.csv",
+      "source_sha256": "0d864706dc53b107826ee86b96e795d077e346aae62b05101ca1b94342f31a00",
+      "source_role": "requirements",
+      "parser_name": "requirement_reader.phase1b",
+      "parser_status": "parsed",
+      "source_locator": "row:2",
+      "evidence_type": "csv_row",
+      "evidence_text": "The UAS shall return to base when battery state falls below 20 percent",
+      "confidence": 1.0,
+      "target_entity_ids": [
+        "requirement-f573675ab7b7a6de"
+      ],
+      "warnings": []
+    },
+    {
+      "provenance_id": "provenance-723dc161d5436a6e",
+      "source_relative_path": "sysml/demo_uas.sysml",
+      "source_sha256": "09afd2a5e3764dbd5e14849493d204f0482a51472ebdd7e3f97880e07b6e193a",
+      "source_role": "sysml",
+      "parser_name": "sysml_v2_reader.phase1b",
+      "parser_status": "parsed",
+      "source_locator": "line:7",
+      "evidence_type": "sysml_line",
+      "evidence_text": "controller",
+      "confidence": 1.0,
+      "target_entity_ids": [
+        "component-13dea59eef10a353"
+      ],
+      "warnings": []
+    },
+    {
+      "provenance_id": "provenance-766d84c8a3ea66f0",
+      "source_relative_path": "geometry/geometry_linkage.json",
+      "source_sha256": "e68eb655dc02063040d0bc9aad689e33e27f0d2f47415f8fb71166994806c859",
+      "source_role": "geometry",
+      "parser_name": "package_reader.phase1a",
+      "parser_status": "parsed",
+      "source_locator": "file",
+      "evidence_type": "whole_file",
+      "evidence_text": "geometry_linkage.json",
+      "confidence": 1.0,
+      "target_entity_ids": [],
+      "warnings": [
+        "parent folder suggests geometry, but extension .json is not recognized for that role"
+      ]
+    },
+    {
+      "provenance_id": "provenance-8f4cde2e979d5732",
+      "source_relative_path": "sysml/demo_uas.sysml",
+      "source_sha256": "09afd2a5e3764dbd5e14849493d204f0482a51472ebdd7e3f97880e07b6e193a",
+      "source_role": "sysml",
+      "parser_name": "sysml_v2_reader.phase1b",
+      "parser_status": "parsed",
+      "source_locator": "line:5",
+      "evidence_type": "sysml_line",
+      "evidence_text": "airframe",
+      "confidence": 1.0,
+      "target_entity_ids": [
+        "component-724f05421c60d480"
+      ],
+      "warnings": []
+    },
+    {
+      "provenance_id": "provenance-9c3a7a99974795cf",
+      "source_relative_path": "parameters/geometry_parameters.csv",
+      "source_sha256": "34aa3e0a755cbe0f3faed88633a4bdede34404100d0b0e26bcdda46dc550c09c",
+      "source_role": "parameters",
+      "parser_name": "parameter_reader.phase1b",
+      "parser_status": "parsed",
+      "source_locator": "row:4",
+      "evidence_type": "csv_row",
+      "evidence_text": "Demonstration assumption for STL bounding-box z dimension; not vendor data.",
+      "confidence": 1.0,
+      "target_entity_ids": [
+        "parameter-81c5727323f02772"
+      ],
+      "warnings": []
+    },
+    {
+      "provenance_id": "provenance-ba5af79b9586b71e",
+      "source_relative_path": "geometry/demo_uas.stl",
+      "source_sha256": "a480ea2f2c1951975008d48747d41bc6f7b65fa2483f2033b38801fe2c144ea1",
+      "source_role": "geometry",
+      "parser_name": "package_reader.phase1a",
+      "parser_status": "referenced_not_parsed",
+      "source_locator": "file",
+      "evidence_type": "geometry_file",
+      "evidence_text": "demo_uas.stl",
+      "confidence": 1.0,
+      "target_entity_ids": [
+        "geometry-442731f9c74c1b85"
+      ],
+      "warnings": []
+    },
+    {
+      "provenance_id": "provenance-be11bc63cfefa452",
+      "source_relative_path": "sysml/demo_uas.sysml",
+      "source_sha256": "09afd2a5e3764dbd5e14849493d204f0482a51472ebdd7e3f97880e07b6e193a",
+      "source_role": "sysml",
+      "parser_name": "sysml_v2_reader.phase1b",
+      "parser_status": "parsed",
+      "source_locator": "line:9",
+      "evidence_type": "sysml_line",
+      "evidence_text": "vehicle_speed",
+      "confidence": 1.0,
+      "target_entity_ids": [],
+      "warnings": []
+    },
+    {
+      "provenance_id": "provenance-d6d02467d47ffcaa",
+      "source_relative_path": "physical_models/energy_model.md",
+      "source_sha256": "87a0a826d6a4adc28afa1c8ff48df4777430f5d975210079ac817856d551b78e",
+      "source_role": "physical_model",
+      "parser_name": "physical_model_reader.phase1b",
+      "parser_status": "parsed",
+      "source_locator": "line:3",
+      "evidence_type": "text_line",
+      "evidence_text": "remaining_energy = battery_capacity - power_draw * time",
+      "confidence": 1.0,
+      "target_entity_ids": [
+        "physicalmodel-3297b6e79f95766a"
+      ],
+      "warnings": []
+    },
+    {
+      "provenance_id": "provenance-dd199187d17b5d3f",
+      "source_relative_path": "sysml/demo_uas.sysml",
+      "source_sha256": "09afd2a5e3764dbd5e14849493d204f0482a51472ebdd7e3f97880e07b6e193a",
+      "source_role": "sysml",
+      "parser_name": "sysml_v2_reader.phase1b",
+      "parser_status": "parsed",
+      "source_locator": "line:4",
+      "evidence_type": "sysml_line",
+      "evidence_text": "FlightController",
+      "confidence": 1.0,
+      "target_entity_ids": [
+        "component-584e9194e0e72328"
+      ],
+      "warnings": []
+    },
+    {
+      "provenance_id": "provenance-edd1aa774c5ac577",
+      "source_relative_path": "requirements/requirements.csv",
+      "source_sha256": "0d864706dc53b107826ee86b96e795d077e346aae62b05101ca1b94342f31a00",
+      "source_role": "requirements",
+      "parser_name": "requirement_reader.phase1b",
+      "parser_status": "parsed",
+      "source_locator": "row:3",
+      "evidence_type": "csv_row",
+      "evidence_text": "The UAS shall not exceed the configured maximum speed",
+      "confidence": 1.0,
+      "target_entity_ids": [
+        "requirement-cc13b5cf4cd2b56b"
+      ],
+      "warnings": []
+    },
+    {
+      "provenance_id": "provenance-ede00a79a890409b",
+      "source_relative_path": "sysml/demo_uas.sysml",
+      "source_sha256": "09afd2a5e3764dbd5e14849493d204f0482a51472ebdd7e3f97880e07b6e193a",
+      "source_role": "sysml",
+      "parser_name": "sysml_v2_reader.phase1b",
+      "parser_status": "parsed",
+      "source_locator": "line:3",
+      "evidence_type": "sysml_line",
+      "evidence_text": "Battery",
+      "confidence": 1.0,
+      "target_entity_ids": [
+        "component-e160eb31750ac3f7"
+      ],
+      "warnings": []
+    },
+    {
+      "provenance_id": "provenance-efc0e36c885509f3",
+      "source_relative_path": "parameters/parameters.csv",
+      "source_sha256": "51f002761ff4d89fc4a535aeeafcee44c02977f298ebe58b5760b710c815c0a6",
+      "source_role": "parameters",
+      "parser_name": "parameter_reader.phase1b",
+      "parser_status": "parsed",
+      "source_locator": "row:3",
+      "evidence_type": "csv_row",
+      "evidence_text": "Maximum commanded speed",
+      "confidence": 1.0,
+      "target_entity_ids": [
+        "parameter-6cef2ed5beb33e99"
+      ],
+      "warnings": []
+    },
+    {
+      "provenance_id": "provenance-f861dc618134fdc1",
+      "source_relative_path": "sysml/demo_uas.sysml",
+      "source_sha256": "09afd2a5e3764dbd5e14849493d204f0482a51472ebdd7e3f97880e07b6e193a",
+      "source_role": "sysml",
+      "parser_name": "sysml_v2_reader.phase1b",
+      "parser_status": "parsed",
+      "source_locator": "line:10",
+      "evidence_type": "sysml_line",
+      "evidence_text": "ReturnToBase",
+      "confidence": 1.0,
+      "target_entity_ids": [
+        "behavior-e0cb3cdea8db55dd"
+      ],
+      "warnings": []
+    },
+    {
+      "provenance_id": "provenance-f980041cb9698dee",
+      "source_relative_path": "parameters/parameters.csv",
+      "source_sha256": "51f002761ff4d89fc4a535aeeafcee44c02977f298ebe58b5760b710c815c0a6",
+      "source_role": "parameters",
+      "parser_name": "parameter_reader.phase1b",
+      "parser_status": "parsed",
+      "source_locator": "row:2",
+      "evidence_type": "csv_row",
+      "evidence_text": "Return-to-base threshold",
+      "confidence": 1.0,
+      "target_entity_ids": [
+        "parameter-d617d6864ad0cef0"
+      ],
+      "warnings": []
+    },
+    {
+      "provenance_id": "provenance-fb5f07df7d360eca",
+      "source_relative_path": "parameters/geometry_parameters.csv",
+      "source_sha256": "34aa3e0a755cbe0f3faed88633a4bdede34404100d0b0e26bcdda46dc550c09c",
+      "source_role": "parameters",
+      "parser_name": "parameter_reader.phase1b",
+      "parser_status": "parsed",
+      "source_locator": "row:2",
+      "evidence_type": "csv_row",
+      "evidence_text": "Demonstration assumption for STL bounding-box x dimension; not vendor data.",
+      "confidence": 1.0,
+      "target_entity_ids": [
+        "parameter-cb1823af29e29a01"
+      ],
+      "warnings": []
+    }
+  ],
+  "source_files": [
+    {
+      "source_relative_path": "geometry/README.md",
+      "role": "documentation",
+      "size_bytes": 546,
+      "sha256": "b5c7c7de37057f298cf2331fede49b42d711d6fb51f8a9c7f8330c28838c9db5",
+      "parser_status": "unsupported",
+      "referenced_entity_ids": [],
+      "warnings": []
+    },
+    {
+      "source_relative_path": "geometry/demo_uas.stl",
+      "role": "geometry",
+      "size_bytes": 27049,
+      "sha256": "a480ea2f2c1951975008d48747d41bc6f7b65fa2483f2033b38801fe2c144ea1",
+      "parser_status": "referenced_not_parsed",
+      "referenced_entity_ids": [
+        "geometry-442731f9c74c1b85"
+      ],
+      "warnings": []
+    },
+    {
+      "source_relative_path": "geometry/geometry_linkage.json",
+      "role": "geometry",
+      "size_bytes": 547,
+      "sha256": "e68eb655dc02063040d0bc9aad689e33e27f0d2f47415f8fb71166994806c859",
+      "parser_status": "parsed",
+      "referenced_entity_ids": [],
+      "warnings": [
+        "parent folder suggests geometry, but extension .json is not recognized for that role"
+      ]
+    },
+    {
+      "source_relative_path": "parameters/geometry_parameters.csv",
+      "role": "parameters",
+      "size_bytes": 416,
+      "sha256": "34aa3e0a755cbe0f3faed88633a4bdede34404100d0b0e26bcdda46dc550c09c",
+      "parser_status": "parsed",
+      "referenced_entity_ids": [
+        "parameter-81c5727323f02772",
+        "parameter-cb1823af29e29a01",
+        "parameter-f925806b3ec7f538"
+      ],
+      "warnings": []
+    },
+    {
+      "source_relative_path": "parameters/parameters.csv",
+      "role": "parameters",
+      "size_bytes": 239,
+      "sha256": "51f002761ff4d89fc4a535aeeafcee44c02977f298ebe58b5760b710c815c0a6",
+      "parser_status": "parsed",
+      "referenced_entity_ids": [
+        "parameter-6cef2ed5beb33e99",
+        "parameter-d617d6864ad0cef0",
+        "parameter-eab25fb74d9197be"
+      ],
+      "warnings": []
+    },
+    {
+      "source_relative_path": "physical_models/energy_model.md",
+      "role": "physical_model",
+      "size_bytes": 215,
+      "sha256": "87a0a826d6a4adc28afa1c8ff48df4777430f5d975210079ac817856d551b78e",
+      "parser_status": "parsed",
+      "referenced_entity_ids": [
+        "physicalmodel-3297b6e79f95766a"
+      ],
+      "warnings": []
+    },
+    {
+      "source_relative_path": "requirements/requirements.csv",
+      "role": "requirements",
+      "size_bytes": 264,
+      "sha256": "0d864706dc53b107826ee86b96e795d077e346aae62b05101ca1b94342f31a00",
+      "parser_status": "parsed",
+      "referenced_entity_ids": [
+        "requirement-cc13b5cf4cd2b56b",
+        "requirement-f573675ab7b7a6de"
+      ],
+      "warnings": []
+    },
+    {
+      "source_relative_path": "sysml/demo_uas.sysml",
+      "role": "sysml",
+      "size_bytes": 229,
+      "sha256": "09afd2a5e3764dbd5e14849493d204f0482a51472ebdd7e3f97880e07b6e193a",
+      "parser_status": "parsed",
+      "referenced_entity_ids": [
+        "behavior-e0cb3cdea8db55dd",
+        "component-13dea59eef10a353",
+        "component-359fd778cafe85fe",
+        "component-584e9194e0e72328",
+        "component-65c79176492bd9b2",
+        "component-724f05421c60d480",
+        "component-bbcc380b39f7d6ad",
+        "component-e160eb31750ac3f7"
+      ],
+      "warnings": []
+    }
+  ],
+  "coverage_summary": {
+    "total_asot_entities": 18,
+    "entities_with_precise_provenance": 17,
+    "entities_with_whole_file_provenance": 1,
+    "entities_with_unresolved_provenance": 0,
+    "entities_marked_not_provided": 0,
+    "traceability_percentage": 100.0
+  },
+  "warnings": [
+    "ASOT geometry entity geometry-442731f9c74c1b85 has only whole-file provenance"
+  ]
+}

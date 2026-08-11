@@ -1,0 +1,54 @@
+{
+  "schema_version": "de2sim.ai_contribution_manifest.v1",
+  "provider": "ollama",
+  "model": "gemma3:4b",
+  "generation_mode": "canonical_asot_scaffold_plus_local_ai_enrichment",
+  "enrichment_completeness": "partial",
+  "substantive_ai_contribution_confirmed": true,
+  "generated_field_count": 5,
+  "generated_character_count": 259,
+  "generated_json_paths": [
+    "$.behavior_summary",
+    "$.transition_rationale.mission_flight_to_return_to_base",
+    "$.state_actions.return_to_base[0]",
+    "$.assumptions[0]",
+    "$.assumptions[1]"
+  ],
+  "omitted_or_empty_json_paths": [
+    "$.state_descriptions.preflight",
+    "$.state_descriptions.mission_flight",
+    "$.state_descriptions.return_to_base",
+    "$.state_descriptions.landed",
+    "$.transition_rationale.preflight_to_mission_flight",
+    "$.transition_rationale.return_to_base_to_landed",
+    "$.state_actions.preflight",
+    "$.state_actions.mission_flight",
+    "$.state_actions.landed",
+    "$.risks[]",
+    "$.limitations[]"
+  ],
+  "deterministic_structure_json_paths": [
+    "$.name",
+    "$.states",
+    "$.transitions",
+    "$.guards",
+    "$.referenced_requirement_ids",
+    "$.referenced_parameter_ids",
+    "$.referenced_behavior_ids",
+    "$.source_provenance_ids",
+    "$.proposal_id",
+    "$.stable_id"
+  ],
+  "prompt_hash": "283f6bdabff3e2d231916aee2cee1d054fe1bcacba8631ae56978b0c3f180961",
+  "original_response_hash": "1bf116f8e6b737ee6f0ecb6a1898dbc9558966801486aff2efdd1f091245f6f3",
+  "repaired_response_hash": "",
+  "normalized_enrichment_hash": "cb18670902cc37de284aa7d79b5f1fb48deb3c68b083e1201811d6af5ee4e7ad",
+  "merged_proposal_hash": "680aaf3365ef48dc1db315221034c58bc4ad76a22751f47d60377a5592a5a709",
+  "actual_local_model_inference_occurred": true,
+  "actual_external_api_call_occurred": false,
+  "validation_status": "passed",
+  "limitations": [
+    "Authoritative ASOT behavior structure is deterministic and not model generated.",
+    "Missing enrichment fields are not replaced with fabricated narrative text."
+  ]
+}

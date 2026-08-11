@@ -1,0 +1,568 @@
+{
+  "schema_version": "de2sim.behavior_prompt.v1",
+  "prompt_hash": "283f6bdabff3e2d231916aee2cee1d054fe1bcacba8631ae56978b0c3f180961",
+  "prompt": {
+    "task": "Propose candidate state-machine behaviors for human review only.",
+    "external_generation_purpose": "Generate an evidence-grounded executable UAS behavior proposal linked to validated CAD-export geometry",
+    "safety_instructions": [
+      "Do not invent unsupported numerical values or thresholds.",
+      "Use only component IDs, requirement IDs, parameter IDs, physical model IDs, and provenance IDs present in this prompt.",
+      "Use authoritative ASOT evidence only.",
+      "Do not invent ownership, parameters, requirements, physical models, source claims, or provenance claims.",
+      "Do not generate Python, GDScript, shell commands, or executable code.",
+      "Do not execute or evaluate source content, equations, or proposed behaviors.",
+      "Explicitly list assumptions and risks for every proposal.",
+      "Return JSON that matches the required_response_schema."
+    ],
+    "required_uas_behavior": {
+      "proposal_count": 1,
+      "name": "Low Battery Return-to-Base",
+      "states": [
+        "preflight",
+        "mission_flight",
+        "return_to_base",
+        "landed"
+      ],
+      "transition_sequence": [
+        {
+          "from": "preflight",
+          "to": "mission_flight"
+        },
+        {
+          "from": "mission_flight",
+          "to": "return_to_base"
+        },
+        {
+          "from": "return_to_base",
+          "to": "landed"
+        }
+      ],
+      "required_symbolic_guard": "battery_state <= battery_threshold",
+      "required_evidence": [
+        "source-derived ReturnToBase behavior",
+        "Low Battery Return requirement",
+        "Maximum Speed requirement",
+        "battery_threshold parameter",
+        "max_speed parameter",
+        "battery_capacity parameter",
+        "relevant provenance IDs"
+      ],
+      "allowed_improvements": [
+        "descriptions",
+        "actions",
+        "risks",
+        "assumptions",
+        "rationale"
+      ]
+    },
+    "components": [
+      {
+        "stable_id": "component-13dea59eef10a353",
+        "name": "controller",
+        "description": "",
+        "component_type": "part",
+        "source_references": [
+          "provenance-723dc161d5436a6e"
+        ]
+      },
+      {
+        "stable_id": "component-359fd778cafe85fe",
+        "name": "Airframe",
+        "description": "",
+        "component_type": "part def",
+        "source_references": [
+          "provenance-384ad9f875ccf0dc"
+        ]
+      },
+      {
+        "stable_id": "component-584e9194e0e72328",
+        "name": "FlightController",
+        "description": "",
+        "component_type": "part def",
+        "source_references": [
+          "provenance-dd199187d17b5d3f"
+        ]
+      },
+      {
+        "stable_id": "component-65c79176492bd9b2",
+        "name": "DemoUAS",
+        "description": "",
+        "component_type": "package",
+        "source_references": [
+          "provenance-0cc2d806524cf1dc"
+        ]
+      },
+      {
+        "stable_id": "component-724f05421c60d480",
+        "name": "airframe",
+        "description": "",
+        "component_type": "part",
+        "source_references": [
+          "provenance-8f4cde2e979d5732"
+        ]
+      },
+      {
+        "stable_id": "component-bbcc380b39f7d6ad",
+        "name": "battery",
+        "description": "",
+        "component_type": "part",
+        "source_references": [
+          "provenance-01d582db9ae79306"
+        ]
+      },
+      {
+        "stable_id": "component-e160eb31750ac3f7",
+        "name": "Battery",
+        "description": "",
+        "component_type": "part def",
+        "source_references": [
+          "provenance-ede00a79a890409b"
+        ]
+      }
+    ],
+    "requirements": [
+      {
+        "stable_id": "requirement-cc13b5cf4cd2b56b",
+        "requirement_id": "REQ-002",
+        "name": "Maximum Speed",
+        "text": "The UAS shall not exceed the configured maximum speed",
+        "priority": "Medium",
+        "source_references": [
+          "provenance-edd1aa774c5ac577"
+        ]
+      },
+      {
+        "stable_id": "requirement-f573675ab7b7a6de",
+        "requirement_id": "REQ-001",
+        "name": "Low Battery Return",
+        "text": "The UAS shall return to base when battery state falls below 20 percent",
+        "priority": "High",
+        "source_references": [
+          "provenance-42fdf13657a78f66"
+        ]
+      }
+    ],
+    "parameters": [
+      {
+        "stable_id": "parameter-6cef2ed5beb33e99",
+        "name": "max_speed",
+        "description": "Maximum commanded speed",
+        "value": 25,
+        "unit": "m/s",
+        "minimum": 0,
+        "maximum": 35,
+        "symbolic_expression": "",
+        "owning_component_id": "",
+        "source_references": [
+          "provenance-efc0e36c885509f3"
+        ]
+      },
+      {
+        "stable_id": "parameter-81c5727323f02772",
+        "name": "geometry_z_dimension",
+        "description": "Demonstration assumption for STL bounding-box z dimension; not vendor data.",
+        "value": 0.24,
+        "unit": "m",
+        "minimum": null,
+        "maximum": null,
+        "symbolic_expression": "",
+        "owning_component_id": "",
+        "source_references": [
+          "provenance-9c3a7a99974795cf"
+        ]
+      },
+      {
+        "stable_id": "parameter-cb1823af29e29a01",
+        "name": "geometry_x_dimension",
+        "description": "Demonstration assumption for STL bounding-box x dimension; not vendor data.",
+        "value": 1.2,
+        "unit": "m",
+        "minimum": null,
+        "maximum": null,
+        "symbolic_expression": "",
+        "owning_component_id": "",
+        "source_references": [
+          "provenance-fb5f07df7d360eca"
+        ]
+      },
+      {
+        "stable_id": "parameter-d617d6864ad0cef0",
+        "name": "battery_threshold",
+        "description": "Return-to-base threshold",
+        "value": 20,
+        "unit": "percent",
+        "minimum": 0,
+        "maximum": 100,
+        "symbolic_expression": "",
+        "owning_component_id": "",
+        "source_references": [
+          "provenance-f980041cb9698dee"
+        ]
+      },
+      {
+        "stable_id": "parameter-eab25fb74d9197be",
+        "name": "battery_capacity",
+        "description": "Nominal battery capacity",
+        "value": 4800,
+        "unit": "Wh",
+        "minimum": 0,
+        "maximum": 6000,
+        "symbolic_expression": "",
+        "owning_component_id": "",
+        "source_references": [
+          "provenance-0a7b7db8ac841b2f"
+        ]
+      },
+      {
+        "stable_id": "parameter-f925806b3ec7f538",
+        "name": "geometry_y_dimension",
+        "description": "Demonstration assumption for STL bounding-box y dimension; not vendor data.",
+        "value": 1.2,
+        "unit": "m",
+        "minimum": null,
+        "maximum": null,
+        "symbolic_expression": "",
+        "owning_component_id": "",
+        "source_references": [
+          "provenance-2e49c21b631a9c0b"
+        ]
+      }
+    ],
+    "physical_models": [
+      {
+        "stable_id": "physicalmodel-3297b6e79f95766a",
+        "name": "remaining_energy = battery_capacity - power_draw * time",
+        "description": "",
+        "equation": "remaining_energy = battery_capacity - power_draw * time",
+        "variables": [],
+        "parameter_ids": [],
+        "assumptions": [],
+        "owning_component_ids": [],
+        "source_references": [
+          "provenance-d6d02467d47ffcaa"
+        ]
+      }
+    ],
+    "existing_source_derived_behaviors": [
+      {
+        "stable_id": "behavior-e0cb3cdea8db55dd",
+        "name": "ReturnToBase",
+        "description": "",
+        "behavior_type": "action",
+        "states": [],
+        "transitions": [],
+        "triggers": [],
+        "guards": [],
+        "actions": [
+          "ReturnToBase"
+        ],
+        "owning_component_id": "",
+        "generated_by": "source",
+        "source_references": [
+          "provenance-f861dc618134fdc1"
+        ]
+      }
+    ],
+    "provenance_references": [
+      {
+        "provenance_id": "provenance-01d582db9ae79306",
+        "source_relative_path": "sysml/demo_uas.sysml",
+        "source_role": "sysml",
+        "parser_name": "sysml_v2_reader.phase1b",
+        "source_locator": "line:6",
+        "evidence_type": "sysml_line",
+        "evidence_text": "battery",
+        "target_entity_ids": [
+          "component-bbcc380b39f7d6ad"
+        ]
+      },
+      {
+        "provenance_id": "provenance-0389e627d04adc56",
+        "source_relative_path": "sysml/demo_uas.sysml",
+        "source_role": "sysml",
+        "parser_name": "sysml_v2_reader.phase1b",
+        "source_locator": "line:8",
+        "evidence_type": "sysml_line",
+        "evidence_text": "battery_state",
+        "target_entity_ids": []
+      },
+      {
+        "provenance_id": "provenance-0a7b7db8ac841b2f",
+        "source_relative_path": "parameters/parameters.csv",
+        "source_role": "parameters",
+        "parser_name": "parameter_reader.phase1b",
+        "source_locator": "row:4",
+        "evidence_type": "csv_row",
+        "evidence_text": "Nominal battery capacity",
+        "target_entity_ids": [
+          "parameter-eab25fb74d9197be"
+        ]
+      },
+      {
+        "provenance_id": "provenance-0cc2d806524cf1dc",
+        "source_relative_path": "sysml/demo_uas.sysml",
+        "source_role": "sysml",
+        "parser_name": "sysml_v2_reader.phase1b",
+        "source_locator": "line:1",
+        "evidence_type": "sysml_line",
+        "evidence_text": "DemoUAS",
+        "target_entity_ids": [
+          "component-65c79176492bd9b2"
+        ]
+      },
+      {
+        "provenance_id": "provenance-2e49c21b631a9c0b",
+        "source_relative_path": "parameters/geometry_parameters.csv",
+        "source_role": "parameters",
+        "parser_name": "parameter_reader.phase1b",
+        "source_locator": "row:3",
+        "evidence_type": "csv_row",
+        "evidence_text": "Demonstration assumption for STL bounding-box y dimension; not vendor data.",
+        "target_entity_ids": [
+          "parameter-f925806b3ec7f538"
+        ]
+      },
+      {
+        "provenance_id": "provenance-384ad9f875ccf0dc",
+        "source_relative_path": "sysml/demo_uas.sysml",
+        "source_role": "sysml",
+        "parser_name": "sysml_v2_reader.phase1b",
+        "source_locator": "line:2",
+        "evidence_type": "sysml_line",
+        "evidence_text": "Airframe",
+        "target_entity_ids": [
+          "component-359fd778cafe85fe"
+        ]
+      },
+      {
+        "provenance_id": "provenance-42fdf13657a78f66",
+        "source_relative_path": "requirements/requirements.csv",
+        "source_role": "requirements",
+        "parser_name": "requirement_reader.phase1b",
+        "source_locator": "row:2",
+        "evidence_type": "csv_row",
+        "evidence_text": "The UAS shall return to base when battery state falls below 20 percent",
+        "target_entity_ids": [
+          "requirement-f573675ab7b7a6de"
+        ]
+      },
+      {
+        "provenance_id": "provenance-723dc161d5436a6e",
+        "source_relative_path": "sysml/demo_uas.sysml",
+        "source_role": "sysml",
+        "parser_name": "sysml_v2_reader.phase1b",
+        "source_locator": "line:7",
+        "evidence_type": "sysml_line",
+        "evidence_text": "controller",
+        "target_entity_ids": [
+          "component-13dea59eef10a353"
+        ]
+      },
+      {
+        "provenance_id": "provenance-766d84c8a3ea66f0",
+        "source_relative_path": "geometry/geometry_linkage.json",
+        "source_role": "geometry",
+        "parser_name": "package_reader.phase1a",
+        "source_locator": "file",
+        "evidence_type": "whole_file",
+        "evidence_text": "geometry_linkage.json",
+        "target_entity_ids": []
+      },
+      {
+        "provenance_id": "provenance-8f4cde2e979d5732",
+        "source_relative_path": "sysml/demo_uas.sysml",
+        "source_role": "sysml",
+        "parser_name": "sysml_v2_reader.phase1b",
+        "source_locator": "line:5",
+        "evidence_type": "sysml_line",
+        "evidence_text": "airframe",
+        "target_entity_ids": [
+          "component-724f05421c60d480"
+        ]
+      },
+      {
+        "provenance_id": "provenance-9c3a7a99974795cf",
+        "source_relative_path": "parameters/geometry_parameters.csv",
+        "source_role": "parameters",
+        "parser_name": "parameter_reader.phase1b",
+        "source_locator": "row:4",
+        "evidence_type": "csv_row",
+        "evidence_text": "Demonstration assumption for STL bounding-box z dimension; not vendor data.",
+        "target_entity_ids": [
+          "parameter-81c5727323f02772"
+        ]
+      },
+      {
+        "provenance_id": "provenance-ba5af79b9586b71e",
+        "source_relative_path": "geometry/demo_uas.stl",
+        "source_role": "geometry",
+        "parser_name": "package_reader.phase1a",
+        "source_locator": "file",
+        "evidence_type": "geometry_file",
+        "evidence_text": "demo_uas.stl",
+        "target_entity_ids": [
+          "geometry-442731f9c74c1b85"
+        ]
+      },
+      {
+        "provenance_id": "provenance-be11bc63cfefa452",
+        "source_relative_path": "sysml/demo_uas.sysml",
+        "source_role": "sysml",
+        "parser_name": "sysml_v2_reader.phase1b",
+        "source_locator": "line:9",
+        "evidence_type": "sysml_line",
+        "evidence_text": "vehicle_speed",
+        "target_entity_ids": []
+      },
+      {
+        "provenance_id": "provenance-d6d02467d47ffcaa",
+        "source_relative_path": "physical_models/energy_model.md",
+        "source_role": "physical_model",
+        "parser_name": "physical_model_reader.phase1b",
+        "source_locator": "line:3",
+        "evidence_type": "text_line",
+        "evidence_text": "remaining_energy = battery_capacity - power_draw * time",
+        "target_entity_ids": [
+          "physicalmodel-3297b6e79f95766a"
+        ]
+      },
+      {
+        "provenance_id": "provenance-dd199187d17b5d3f",
+        "source_relative_path": "sysml/demo_uas.sysml",
+        "source_role": "sysml",
+        "parser_name": "sysml_v2_reader.phase1b",
+        "source_locator": "line:4",
+        "evidence_type": "sysml_line",
+        "evidence_text": "FlightController",
+        "target_entity_ids": [
+          "component-584e9194e0e72328"
+        ]
+      },
+      {
+        "provenance_id": "provenance-edd1aa774c5ac577",
+        "source_relative_path": "requirements/requirements.csv",
+        "source_role": "requirements",
+        "parser_name": "requirement_reader.phase1b",
+        "source_locator": "row:3",
+        "evidence_type": "csv_row",
+        "evidence_text": "The UAS shall not exceed the configured maximum speed",
+        "target_entity_ids": [
+          "requirement-cc13b5cf4cd2b56b"
+        ]
+      },
+      {
+        "provenance_id": "provenance-ede00a79a890409b",
+        "source_relative_path": "sysml/demo_uas.sysml",
+        "source_role": "sysml",
+        "parser_name": "sysml_v2_reader.phase1b",
+        "source_locator": "line:3",
+        "evidence_type": "sysml_line",
+        "evidence_text": "Battery",
+        "target_entity_ids": [
+          "component-e160eb31750ac3f7"
+        ]
+      },
+      {
+        "provenance_id": "provenance-efc0e36c885509f3",
+        "source_relative_path": "parameters/parameters.csv",
+        "source_role": "parameters",
+        "parser_name": "parameter_reader.phase1b",
+        "source_locator": "row:3",
+        "evidence_type": "csv_row",
+        "evidence_text": "Maximum commanded speed",
+        "target_entity_ids": [
+          "parameter-6cef2ed5beb33e99"
+        ]
+      },
+      {
+        "provenance_id": "provenance-f861dc618134fdc1",
+        "source_relative_path": "sysml/demo_uas.sysml",
+        "source_role": "sysml",
+        "parser_name": "sysml_v2_reader.phase1b",
+        "source_locator": "line:10",
+        "evidence_type": "sysml_line",
+        "evidence_text": "ReturnToBase",
+        "target_entity_ids": [
+          "behavior-e0cb3cdea8db55dd"
+        ]
+      },
+      {
+        "provenance_id": "provenance-f980041cb9698dee",
+        "source_relative_path": "parameters/parameters.csv",
+        "source_role": "parameters",
+        "parser_name": "parameter_reader.phase1b",
+        "source_locator": "row:2",
+        "evidence_type": "csv_row",
+        "evidence_text": "Return-to-base threshold",
+        "target_entity_ids": [
+          "parameter-d617d6864ad0cef0"
+        ]
+      },
+      {
+        "provenance_id": "provenance-fb5f07df7d360eca",
+        "source_relative_path": "parameters/geometry_parameters.csv",
+        "source_role": "parameters",
+        "parser_name": "parameter_reader.phase1b",
+        "source_locator": "row:2",
+        "evidence_type": "csv_row",
+        "evidence_text": "Demonstration assumption for STL bounding-box x dimension; not vendor data.",
+        "target_entity_ids": [
+          "parameter-cb1823af29e29a01"
+        ]
+      }
+    ],
+    "required_response_schema": {
+      "proposals": [
+        {
+          "name": "string",
+          "description": "string",
+          "behavior_type": "state_machine",
+          "owning_component_id": "ASOT component stable_id",
+          "states": [
+            "string"
+          ],
+          "transitions": [
+            {
+              "from": "state",
+              "to": "state",
+              "trigger": "string",
+              "guard": "string",
+              "action": "string"
+            }
+          ],
+          "triggers": [
+            "string"
+          ],
+          "guards": [
+            "string"
+          ],
+          "actions": [
+            "string"
+          ],
+          "referenced_requirement_ids": [
+            "ASOT requirement stable_id"
+          ],
+          "referenced_parameter_ids": [
+            "ASOT parameter stable_id"
+          ],
+          "referenced_physical_model_ids": [
+            "ASOT physical model stable_id"
+          ],
+          "referenced_behavior_ids": [
+            "ASOT source-derived behavior stable_id"
+          ],
+          "source_provenance_ids": [
+            "ASOT provenance_id"
+          ],
+          "confidence": 0.0,
+          "assumptions": [
+            "string"
+          ],
+          "risks": [
+            "string"
+          ]
+        }
+      ]
+    }
+  }
+}

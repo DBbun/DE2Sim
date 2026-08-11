@@ -1,0 +1,22 @@
+{
+  "valid": true,
+  "errors": [],
+  "warnings": [
+    "ASOT geometry entity geometry-442731f9c74c1b85 has only whole-file provenance"
+  ],
+  "coverage_summary": {
+    "total_asot_entities": 18,
+    "entities_with_precise_provenance": 17,
+    "entities_with_whole_file_provenance": 1,
+    "entities_with_unresolved_provenance": 0,
+    "entities_marked_not_provided": 0,
+    "traceability_percentage": 100.0
+  },
+  "broken_provenance_references": [],
+  "missing_source_files": [],
+  "checksum_mismatches": [],
+  "entities_without_provenance": [],
+  "entities_with_whole_file_only_provenance": [
+    "geometry-442731f9c74c1b85"
+  ]
+}

@@ -1,0 +1,3 @@
+requirement_id,title,text,verification_method,priority
+REQ-001,Low Battery Return,The UAS shall return to base when battery state falls below 20 percent,Simulation,High
+REQ-002,Maximum Speed,The UAS shall not exceed the configured maximum speed,Simulation,Medium

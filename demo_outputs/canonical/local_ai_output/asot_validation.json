@@ -1,0 +1,15 @@
+{
+  "valid": true,
+  "errors": [],
+  "warnings": [],
+  "counts": {
+    "components": 7,
+    "requirements": 2,
+    "interfaces": 0,
+    "parameters": 6,
+    "physical_models": 1,
+    "behaviors": 1,
+    "geometry": 1,
+    "provenance": 21
+  }
+}

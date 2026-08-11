@@ -1,0 +1,106 @@
+DBbun Source-Available License v1.0 (DSAL-1.0)
+Copyright (c) 2026 DBbun LLC. All rights reserved.
+
+This is a source-available license, not an Open Source Initiative (OSI)
+approved open-source license: it restricts use by Commercial Users and
+Government Users (defined below) while keeping the Software free for
+genuine academic research.
+
+1. Definitions
+
+"Software" means this repository's source code, documentation, data,
+models, generated artifacts, and any associated files, in any form.
+
+"Academic Research Use" means use of the Software solely by (a) an
+accredited degree-granting educational institution, or (b) an individual
+acting in their personal capacity, in either case solely for
+non-commercial teaching, academic publication, or scholarly research
+purposes, where:
+  (i) the results are not incorporated into a commercial product or
+      service offered for sale, license, or paid use to any third party;
+  (ii) the use is not performed under a government procurement contract,
+      task order, prize challenge, or other agreement whose deliverables
+      are intended for operational, production, or acquisition purposes;
+      and
+  (iii) the Software is not sublicensed, resold, or otherwise made
+      available to a Commercial User or Government User except in
+      unmodified academic publications describing the work.
+
+"Commercial User" means any for-profit entity, or any person or entity
+acting on behalf of a for-profit entity, that uses the Software for any
+purpose other than Academic Research Use, including internal evaluation,
+product development, or service delivery.
+
+"Government User" means any national, federal, state, provincial,
+tribal, local, or foreign government, any agency, department,
+instrumentality, or military branch thereof, or any contractor or
+subcontractor using the Software to perform work under a government
+contract, grant, task order, or agreement, other than a grant whose sole
+purpose is to fund Academic Research Use as defined above.
+
+2. Grant of License — Academic Research Use
+
+Subject to the terms of this License, DBbun LLC grants you a worldwide,
+royalty-free, non-exclusive, non-transferable, revocable license to use,
+reproduce, modify, and create derivative works of the Software, solely
+for Academic Research Use, provided that:
+
+  (a) you retain this License and all copyright, patent, trademark, and
+      attribution notices in all copies or substantial portions of the
+      Software;
+  (b) any publication or public disclosure of results obtained using the
+      Software credits "DBbun LLC" and identifies the Software by name;
+      and
+  (c) you do not use the Software, or any derivative work, in any manner
+      that would constitute Commercial User or Government User use as
+      defined above.
+
+3. Commercial and Government Use Requires a Separate License
+
+Any use of the Software by a Commercial User or a Government User —
+including without limitation evaluation, internal deployment,
+integration into a product or service, redistribution, or use in
+fulfillment of a government contract, grant, task order, prize
+challenge, or other agreement — is NOT authorized under this License and
+requires a separate, signed commercial or government license agreement
+with DBbun LLC. Contact contact@dbbun.com to request such a license.
+
+4. No Sublicensing
+
+Except as expressly permitted in Section 2(b), you may not sublicense,
+sell, rent, lease, or otherwise transfer rights in the Software.
+
+5. Trademarks
+
+This License does not grant permission to use the trade names,
+trademarks, service marks, or product names of DBbun LLC, except as
+required for reasonable and customary use in describing the origin of
+the Software.
+
+6. Termination
+
+Any use of the Software outside the scope of Section 2 automatically
+terminates the rights granted under this License. DBbun LLC may also
+terminate this License upon written notice for any breach not cured
+within 30 days of notice.
+
+7. Disclaimer of Warranty; Limitation of Liability
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND
+NONINFRINGEMENT. IN NO EVENT SHALL DBBUN LLC BE LIABLE FOR ANY CLAIM,
+DAMAGES, OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT, OR
+OTHERWISE, ARISING FROM, OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR
+THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+8. Governing Law
+
+This License is governed by the laws of the Commonwealth of
+Massachusetts, USA, without regard to its conflict-of-laws principles.
+[Placeholder based on DBbun LLC's registered address — confirm with
+counsel before relying on this.]
+
+9. Contact
+
+For commercial or government licensing inquiries: contact@dbbun.com

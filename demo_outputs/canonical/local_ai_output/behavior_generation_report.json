@@ -1,0 +1,13 @@
+{
+  "valid": true,
+  "proposal_count": 1,
+  "provider": "ollama",
+  "model": "gemma3:4b",
+  "prompt_hash": "283f6bdabff3e2d231916aee2cee1d054fe1bcacba8631ae56978b0c3f180961",
+  "warnings": [],
+  "limitations": [
+    "Phase 4B produces review candidates only.",
+    "Offline candidates are deterministic templates, not generative-AI output.",
+    "No simulation or executable behavior code is generated."
+  ]
+}

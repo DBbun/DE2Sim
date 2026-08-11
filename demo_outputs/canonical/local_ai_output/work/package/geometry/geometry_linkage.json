@@ -1,0 +1,15 @@
+{
+  "authoritativeness": "not_vendor_authoritative",
+  "component_source_key": "DemoUAS",
+  "derived_visualization_role": "training_visualization",
+  "dimension_parameter_source_keys": {
+    "x": "geometry_x_dimension",
+    "y": "geometry_y_dimension",
+    "z": "geometry_z_dimension"
+  },
+  "physical_model_source_key": "remaining_energy = battery_capacity - power_draw * time",
+  "schema_version": "de2sim.geometry_linkage.v1",
+  "source_classification": "demonstration_cad_export",
+  "source_geometry": "geometry/demo_uas.stl",
+  "unit": "m"
+}

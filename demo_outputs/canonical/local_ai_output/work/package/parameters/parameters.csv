@@ -1,0 +1,4 @@
+parameter_id,name,value,unit,minimum,maximum,description
+P-001,battery_threshold,20,percent,0,100,Return-to-base threshold
+P-002,max_speed,25,m/s,0,35,Maximum commanded speed
+P-003,battery_capacity,4800,Wh,0,6000,Nominal battery capacity

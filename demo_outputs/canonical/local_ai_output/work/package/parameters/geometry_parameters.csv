@@ -1,0 +1,4 @@
+parameter_id,name,value,unit,description
+geometry_x_dimension,geometry_x_dimension,1.20,m,Demonstration assumption for STL bounding-box x dimension; not vendor data.
+geometry_y_dimension,geometry_y_dimension,1.20,m,Demonstration assumption for STL bounding-box y dimension; not vendor data.
+geometry_z_dimension,geometry_z_dimension,0.24,m,Demonstration assumption for STL bounding-box z dimension; not vendor data.

@@ -1,0 +1,22 @@
+{
+  "schema_version": "de2sim.ollama_response_audit.v1",
+  "http_response_body_sha256": "673dae5cd2e7a593656d2fa0979a016f8fa76c76e2bbbb51422c1b2d966f11d5",
+  "model_generated_response_string_sha256": "1bf116f8e6b737ee6f0ecb6a1898dbc9558966801486aff2efdd1f091245f6f3",
+  "http_status": 200,
+  "model": "gemma3:4b",
+  "done": true,
+  "done_reason": "stop",
+  "prompt_eval_count": 1662,
+  "eval_count": 189,
+  "total_duration": 40452759200,
+  "parsing_status": "parsed",
+  "repair_attempted": false,
+  "repair_succeeded": false,
+  "original_response_hash": "1bf116f8e6b737ee6f0ecb6a1898dbc9558966801486aff2efdd1f091245f6f3",
+  "repaired_response_hash": "",
+  "limitations": [
+    "Only the model-generated response string is written to ollama_failed_content.txt when parsing fails.",
+    "Request headers, environment data, secrets, and unrelated paths are not written.",
+    "JSON repair is limited to one local loopback Ollama inference."
+  ]
+}
