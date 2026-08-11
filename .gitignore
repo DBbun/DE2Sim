@@ -27,3 +27,7 @@ build/
 /DBbun-DE2Sim-DemoSimulationOutput/
 /DBbun-DE2Sim-DemoUAS-Geometry.zip
 /DBbun-DE2Sim-DemoUAS.zip
+
+# Working challenge-submission drafts (PDF/DOCX) — not a product artifact,
+# kept local-only.
+/challenge_submission/
