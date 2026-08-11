@@ -1,0 +1,7 @@
+evaluation_area,claim,supporting_artifact,supporting_field_or_section,verification_method,limitation
+Technical Feasibility,Pipeline produces runnable simulation evidence,artifacts/simulation_data.json,simulation_status,JSON inspection,Demonstrative point-mass models only
+Technical Feasibility,"Standards-based CAD-export geometry is ingested, validated, linked, and rendered",viewers/geometry_viewer.html,geometry_scene.json,Open local viewer,Demonstration STL is not vendor authoritative
+Innovation Merit,Traceability connects source evidence to runnable behavior,viewers/asot_traceability_viewer.html,graph and source evidence,Open local viewer,Field-level provenance is limited
+Maturity,Package is reproducible and hashed,manifests/submission_manifest.json,sha256,Hash verification,No external deployment
+Speed to Delivery,Local launch requires no Python,Launch_DE2Sim_Demo.bat,%~dp0 launcher,Run batch file,Windows launcher only
+Value to Transition,Human approval and requirement evidence are preserved,artifacts/behavior_decisions.json,decisions,Review JSON/report,No customer deployment claim

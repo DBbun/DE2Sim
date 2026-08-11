@@ -1,0 +1,27 @@
+{
+  "schema_version": "de2sim.ollama_model_output.v1",
+  "provider": "ollama",
+  "model": "gemma3:4b",
+  "parsing_status": "parsed",
+  "validation_status": "passed",
+  "normalized_parsed_enrichment": {
+    "behavior_summary": "The UAS returns to base when the battery state falls below a defined threshold and does not exceed a configured maximum speed.",
+    "state_descriptions": {},
+    "transition_rationale": {
+      "mission_flight_to_return_to_base": "When the battery state falls below 20 percent."
+    },
+    "state_actions": {
+      "return_to_base": [
+        "ReturnToBase"
+      ]
+    },
+    "risks": [],
+    "assumptions": [
+      "The UAS is capable of returning to base.",
+      "A 'battery_state' parameter exists."
+    ],
+    "limitations": []
+  },
+  "model_output_hash": "1bf116f8e6b737ee6f0ecb6a1898dbc9558966801486aff2efdd1f091245f6f3",
+  "validation_errors": []
+}

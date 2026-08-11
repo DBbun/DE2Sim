@@ -1,0 +1,82 @@
+{
+  "geometry_authoritativeness": "not_vendor_authoritative",
+  "geometry_dimensions": {
+    "x": 1.2,
+    "y": 1.2,
+    "z": 0.24
+  },
+  "geometry_id": "geometry-442731f9c74c1b85",
+  "geometry_source_format": "ascii_stl",
+  "geometry_unit": "m",
+  "geometry_used_for_flight_dynamics": false,
+  "geometry_used_for_visualization": true,
+  "high_fidelity": {
+    "certification_notice": "not flight-certified aerodynamics",
+    "description": "demonstrative higher-fidelity two-dimensional point-mass model",
+    "included_effects": [
+      "velocity state",
+      "acceleration limit",
+      "constant wind disturbance",
+      "idle power",
+      "speed-dependent power draw"
+    ]
+  },
+  "low_fidelity": {
+    "battery_logic": "remaining_energy = battery_capacity - power_draw * time",
+    "description": "deterministic two-dimensional kinematic point model",
+    "excluded_effects": [
+      "wind",
+      "acceleration dynamics",
+      "arbitrary equation evaluation"
+    ]
+  },
+  "model_scope": "Phase 5A executable deterministic UAS mission simulation",
+  "return_to_base_guard": "battery_state <= battery_threshold",
+  "security": [
+    "fixed simulation logic only",
+    "no eval",
+    "no exec",
+    "no arbitrary source equation evaluation"
+  ],
+  "shared_inputs": {
+    "approved_behavior_id": "behavior-a7684a40e256a954",
+    "battery_capacity_wh": 4800.0,
+    "battery_threshold_percent": 20.0,
+    "max_speed_mps": 25.0,
+    "scenario_id": "deterministic-demo-uAS-phase5a"
+  },
+  "source_derived_action": "ReturnToBase",
+  "states": [
+    "preflight",
+    "mission_flight",
+    "return_to_base",
+    "landed"
+  ],
+  "terminal_conditions": [
+    "landed",
+    "battery_depleted_before_landing"
+  ],
+  "transition_sequence": [
+    {
+      "action": "begin mission while respecting documented operating limits, including max_speed",
+      "from": "preflight",
+      "guard": "required mission evidence is available",
+      "to": "mission_flight",
+      "trigger": "mission_started"
+    },
+    {
+      "action": "invoke the explicit source-derived ReturnToBase behavior",
+      "from": "mission_flight",
+      "guard": "battery_state <= battery_threshold",
+      "to": "return_to_base",
+      "trigger": "battery_threshold_reached"
+    },
+    {
+      "action": "land and terminate the mission",
+      "from": "return_to_base",
+      "guard": "return-to-base behavior is active and home arrival is confirmed",
+      "to": "landed",
+      "trigger": "home_position_reached"
+    }
+  ]
+}

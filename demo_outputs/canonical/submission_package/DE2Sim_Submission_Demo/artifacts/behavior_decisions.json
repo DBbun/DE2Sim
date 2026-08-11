@@ -1,0 +1,12 @@
+{
+  "schema_version": "de2sim.behavior_decisions.v1",
+  "decisions": [
+    {
+      "proposal_id": "behavior-proposal-b53e1128540e0b17",
+      "approval_status": "approved",
+      "reviewer": "Uri Kartoun, PhD — Founder, DBbun LLC",
+      "comment": "Reviewed the local-AI behavior enrichment against the ASOT requirements, parameters, provenance, state transitions, and low-battery return logic. Approved for inclusion in the demonstration ASOT.",
+      "decided_at_utc": "2026-07-16T18:35:17Z"
+    }
+  ]
+}

@@ -1,0 +1,52 @@
+{
+  "high": {
+    "low_battery_return": {
+      "evidence": "return_to_base entered when battery_state <= battery_threshold and ReturnToBase action was invoked",
+      "requirement_id": "requirement-f573675ab7b7a6de",
+      "status": "pass",
+      "telemetry_indices": {
+        "count": 1,
+        "event_index": 5936,
+        "first_index": 5936,
+        "last_index": 5936
+      }
+    },
+    "maximum_speed": {
+      "interpretation": "Both commanded speed and reported ground speed are checked against ASOT max_speed for this demonstrative point model.",
+      "max_observed_speed_mps": 25.0,
+      "requirement_id": "requirement-cc13b5cf4cd2b56b",
+      "status": "pass",
+      "telemetry_indices": {
+        "count": 1505,
+        "event_index": 2,
+        "first_index": 2,
+        "last_index": 6656
+      }
+    }
+  },
+  "low": {
+    "low_battery_return": {
+      "evidence": "return_to_base entered when battery_state <= battery_threshold and ReturnToBase action was invoked",
+      "requirement_id": "requirement-f573675ab7b7a6de",
+      "status": "pass",
+      "telemetry_indices": {
+        "count": 1,
+        "event_index": 1153,
+        "first_index": 1153,
+        "last_index": 1153
+      }
+    },
+    "maximum_speed": {
+      "interpretation": "Both commanded speed and reported ground speed are checked against ASOT max_speed for this demonstrative point model.",
+      "max_observed_speed_mps": 25.0,
+      "requirement_id": "requirement-cc13b5cf4cd2b56b",
+      "status": "pass",
+      "telemetry_indices": {
+        "count": 287,
+        "event_index": 2,
+        "first_index": 2,
+        "last_index": 1296
+      }
+    }
+  }
+}

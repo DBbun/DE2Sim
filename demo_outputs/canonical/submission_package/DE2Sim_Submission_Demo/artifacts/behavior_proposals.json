@@ -1,0 +1,358 @@
+{
+  "schema_version": "de2sim.behavior_proposals.v1",
+  "asot_id": "asot-ff9303a51b9d5967",
+  "provider": "ollama",
+  "model": "gemma3:4b",
+  "prompt_hash": "283f6bdabff3e2d231916aee2cee1d054fe1bcacba8631ae56978b0c3f180961",
+  "generated_at_utc": "2026-07-16T18:05:14Z",
+  "external_call_metadata": {
+    "actual_external_api_call_occurred": false,
+    "actual_local_model_inference_occurred": true,
+    "ai_contribution_manifest": {
+      "schema_version": "de2sim.ai_contribution_manifest.v1",
+      "provider": "ollama",
+      "model": "gemma3:4b",
+      "generation_mode": "canonical_asot_scaffold_plus_local_ai_enrichment",
+      "enrichment_completeness": "partial",
+      "substantive_ai_contribution_confirmed": true,
+      "generated_field_count": 5,
+      "generated_character_count": 259,
+      "generated_json_paths": [
+        "$.behavior_summary",
+        "$.transition_rationale.mission_flight_to_return_to_base",
+        "$.state_actions.return_to_base[0]",
+        "$.assumptions[0]",
+        "$.assumptions[1]"
+      ],
+      "omitted_or_empty_json_paths": [
+        "$.state_descriptions.preflight",
+        "$.state_descriptions.mission_flight",
+        "$.state_descriptions.return_to_base",
+        "$.state_descriptions.landed",
+        "$.transition_rationale.preflight_to_mission_flight",
+        "$.transition_rationale.return_to_base_to_landed",
+        "$.state_actions.preflight",
+        "$.state_actions.mission_flight",
+        "$.state_actions.landed",
+        "$.risks[]",
+        "$.limitations[]"
+      ],
+      "deterministic_structure_json_paths": [
+        "$.name",
+        "$.states",
+        "$.transitions",
+        "$.guards",
+        "$.referenced_requirement_ids",
+        "$.referenced_parameter_ids",
+        "$.referenced_behavior_ids",
+        "$.source_provenance_ids",
+        "$.proposal_id",
+        "$.stable_id"
+      ],
+      "prompt_hash": "283f6bdabff3e2d231916aee2cee1d054fe1bcacba8631ae56978b0c3f180961",
+      "original_response_hash": "1bf116f8e6b737ee6f0ecb6a1898dbc9558966801486aff2efdd1f091245f6f3",
+      "repaired_response_hash": "",
+      "normalized_enrichment_hash": "cb18670902cc37de284aa7d79b5f1fb48deb3c68b083e1201811d6af5ee4e7ad",
+      "merged_proposal_hash": "680aaf3365ef48dc1db315221034c58bc4ad76a22751f47d60377a5592a5a709",
+      "actual_local_model_inference_occurred": true,
+      "actual_external_api_call_occurred": false,
+      "validation_status": "passed",
+      "limitations": [
+        "Authoritative ASOT behavior structure is deterministic and not model generated.",
+        "Missing enrichment fields are not replaced with fabricated narrative text."
+      ]
+    },
+    "attempt_count": 1,
+    "created_at": "2026-07-16T18:05:14.670125Z",
+    "deterministic_structure_json_paths": [
+      "$.name",
+      "$.states",
+      "$.transitions",
+      "$.guards",
+      "$.referenced_requirement_ids",
+      "$.referenced_parameter_ids",
+      "$.referenced_behavior_ids",
+      "$.source_provenance_ids",
+      "$.proposal_id",
+      "$.stable_id"
+    ],
+    "done": true,
+    "done_reason": "stop",
+    "enrichment_completeness": "partial",
+    "enrichment_hash": "cb18670902cc37de284aa7d79b5f1fb48deb3c68b083e1201811d6af5ee4e7ad",
+    "eval_count": 189,
+    "evidence_status": "confirmed_local_generation",
+    "generated_character_count": 259,
+    "generated_field_count": 5,
+    "generated_json_paths": [
+      "$.behavior_summary",
+      "$.transition_rationale.mission_flight_to_return_to_base",
+      "$.state_actions.return_to_base[0]",
+      "$.assumptions[0]",
+      "$.assumptions[1]"
+    ],
+    "generation_mode": "canonical_asot_scaffold_plus_local_ai_enrichment",
+    "http_status": 200,
+    "local_endpoint": "loopback_only",
+    "model_output_hash": "1bf116f8e6b737ee6f0ecb6a1898dbc9558966801486aff2efdd1f091245f6f3",
+    "normalized_enrichment": {
+      "behavior_summary": "The UAS returns to base when the battery state falls below a defined threshold and does not exceed a configured maximum speed.",
+      "state_descriptions": {},
+      "transition_rationale": {
+        "mission_flight_to_return_to_base": "When the battery state falls below 20 percent."
+      },
+      "state_actions": {
+        "return_to_base": [
+          "ReturnToBase"
+        ]
+      },
+      "risks": [],
+      "assumptions": [
+        "The UAS is capable of returning to base.",
+        "A 'battery_state' parameter exists."
+      ],
+      "limitations": []
+    },
+    "normalized_enrichment_hash": "cb18670902cc37de284aa7d79b5f1fb48deb3c68b083e1201811d6af5ee4e7ad",
+    "omitted_or_empty_json_paths": [
+      "$.state_descriptions.preflight",
+      "$.state_descriptions.mission_flight",
+      "$.state_descriptions.return_to_base",
+      "$.state_descriptions.landed",
+      "$.transition_rationale.preflight_to_mission_flight",
+      "$.transition_rationale.return_to_base_to_landed",
+      "$.state_actions.preflight",
+      "$.state_actions.mission_flight",
+      "$.state_actions.landed",
+      "$.risks[]",
+      "$.limitations[]"
+    ],
+    "original_response_hash": "1bf116f8e6b737ee6f0ecb6a1898dbc9558966801486aff2efdd1f091245f6f3",
+    "parsing_status": "parsed",
+    "prompt_eval_count": 1662,
+    "provider_request_id": "",
+    "repair_attempted": false,
+    "repair_succeeded": false,
+    "request_hash": "45c602599684c4f9c2a3c58f28b032ea557dc890b84c769d45ebbc4bd839b2ff",
+    "request_started_at_utc": "2026-07-16T18:04:32Z",
+    "response_hash": "673dae5cd2e7a593656d2fa0979a016f8fa76c76e2bbbb51422c1b2d966f11d5",
+    "response_received_at_utc": "2026-07-16T18:05:14Z",
+    "timeout_seconds": 180.0,
+    "total_duration": 40452759200,
+    "validated_proposal_hash": "680aaf3365ef48dc1db315221034c58bc4ad76a22751f47d60377a5592a5a709",
+    "validation_status": "passed",
+    "provider": "ollama",
+    "model": "gemma3:4b",
+    "prompt_hash": "283f6bdabff3e2d231916aee2cee1d054fe1bcacba8631ae56978b0c3f180961",
+    "generated_by": "local_generative_ai"
+  },
+  "proposals": [
+    {
+      "proposal_id": "behavior-proposal-b53e1128540e0b17",
+      "name": "Low Battery Return-to-Base",
+      "description": "The UAS returns to base when the battery state falls below a defined threshold and does not exceed a configured maximum speed.",
+      "behavior_type": "state_machine",
+      "owning_component_id": "",
+      "states": [
+        "preflight",
+        "mission_flight",
+        "return_to_base",
+        "landed"
+      ],
+      "transitions": [
+        {
+          "action": "begin mission while respecting documented operating limits, including max_speed",
+          "from": "preflight",
+          "guard": "required mission evidence is available",
+          "to": "mission_flight",
+          "trigger": "mission_started"
+        },
+        {
+          "action": "invoke the explicit source-derived ReturnToBase behavior",
+          "from": "mission_flight",
+          "guard": "battery_state <= battery_threshold",
+          "to": "return_to_base",
+          "trigger": "battery_threshold_reached"
+        },
+        {
+          "action": "land and terminate the mission",
+          "from": "return_to_base",
+          "guard": "return-to-base behavior is active and home arrival is confirmed",
+          "to": "landed",
+          "trigger": "home_position_reached"
+        }
+      ],
+      "triggers": [
+        "battery_threshold_reached",
+        "home_position_reached",
+        "mission_started"
+      ],
+      "guards": [
+        "battery_state <= battery_threshold",
+        "required mission evidence is available",
+        "return-to-base behavior is active and home arrival is confirmed"
+      ],
+      "actions": [
+        "ReturnToBase",
+        "begin mission while respecting documented operating limits, including max_speed",
+        "invoke the explicit source-derived ReturnToBase behavior",
+        "land and terminate the mission"
+      ],
+      "referenced_requirement_ids": [
+        "requirement-cc13b5cf4cd2b56b",
+        "requirement-f573675ab7b7a6de"
+      ],
+      "referenced_parameter_ids": [
+        "parameter-6cef2ed5beb33e99",
+        "parameter-d617d6864ad0cef0",
+        "parameter-eab25fb74d9197be"
+      ],
+      "referenced_physical_model_ids": [],
+      "referenced_behavior_ids": [
+        "behavior-e0cb3cdea8db55dd"
+      ],
+      "source_provenance_ids": [
+        "provenance-0a7b7db8ac841b2f",
+        "provenance-42fdf13657a78f66",
+        "provenance-edd1aa774c5ac577",
+        "provenance-efc0e36c885509f3",
+        "provenance-f861dc618134fdc1",
+        "provenance-f980041cb9698dee"
+      ],
+      "provider": "ollama",
+      "model": "gemma3:4b",
+      "prompt_hash": "283f6bdabff3e2d231916aee2cee1d054fe1bcacba8631ae56978b0c3f180961",
+      "generated_at_utc": "2026-07-16T18:05:14Z",
+      "confidence": 0.72,
+      "assumptions": [
+        "A 'battery_state' parameter exists.",
+        "Authoritative behavior structure and ASOT references are computed locally from validated ASOT evidence.",
+        "The UAS is capable of returning to base."
+      ],
+      "risks": [
+        "Local AI enrichment requires human review before ASOT integration."
+      ],
+      "validation_warnings": [],
+      "approval_status": "proposed",
+      "generated_by": "local_generative_ai",
+      "response_hash": "673dae5cd2e7a593656d2fa0979a016f8fa76c76e2bbbb51422c1b2d966f11d5",
+      "request_hash": "45c602599684c4f9c2a3c58f28b032ea557dc890b84c769d45ebbc4bd839b2ff",
+      "actual_external_api_call_occurred": false,
+      "actual_local_model_inference_occurred": true,
+      "evidence_status": "confirmed_local_generation",
+      "local_endpoint": "loopback_only",
+      "generation_mode": "canonical_asot_scaffold_plus_local_ai_enrichment",
+      "enrichment_hash": "cb18670902cc37de284aa7d79b5f1fb48deb3c68b083e1201811d6af5ee4e7ad",
+      "enrichment_completeness": "partial",
+      "generated_field_count": 5,
+      "generated_character_count": 259,
+      "generated_json_paths": [
+        "$.assumptions[0]",
+        "$.assumptions[1]",
+        "$.behavior_summary",
+        "$.state_actions.return_to_base[0]",
+        "$.transition_rationale.mission_flight_to_return_to_base"
+      ],
+      "omitted_or_empty_json_paths": [
+        "$.limitations[]",
+        "$.risks[]",
+        "$.state_actions.landed",
+        "$.state_actions.mission_flight",
+        "$.state_actions.preflight",
+        "$.state_descriptions.landed",
+        "$.state_descriptions.mission_flight",
+        "$.state_descriptions.preflight",
+        "$.state_descriptions.return_to_base",
+        "$.transition_rationale.preflight_to_mission_flight",
+        "$.transition_rationale.return_to_base_to_landed"
+      ],
+      "deterministic_structure_json_paths": [
+        "$.guards",
+        "$.name",
+        "$.proposal_id",
+        "$.referenced_behavior_ids",
+        "$.referenced_parameter_ids",
+        "$.referenced_requirement_ids",
+        "$.source_provenance_ids",
+        "$.stable_id",
+        "$.states",
+        "$.transitions"
+      ],
+      "normalized_enrichment_hash": "cb18670902cc37de284aa7d79b5f1fb48deb3c68b083e1201811d6af5ee4e7ad",
+      "ai_contribution_manifest": {
+        "actual_external_api_call_occurred": false,
+        "actual_local_model_inference_occurred": true,
+        "deterministic_structure_json_paths": [
+          "$.guards",
+          "$.name",
+          "$.proposal_id",
+          "$.referenced_behavior_ids",
+          "$.referenced_parameter_ids",
+          "$.referenced_requirement_ids",
+          "$.source_provenance_ids",
+          "$.stable_id",
+          "$.states",
+          "$.transitions"
+        ],
+        "enrichment_completeness": "partial",
+        "generated_character_count": 259,
+        "generated_field_count": 5,
+        "generated_json_paths": [
+          "$.assumptions[0]",
+          "$.assumptions[1]",
+          "$.behavior_summary",
+          "$.state_actions.return_to_base[0]",
+          "$.transition_rationale.mission_flight_to_return_to_base"
+        ],
+        "generation_mode": "canonical_asot_scaffold_plus_local_ai_enrichment",
+        "limitations": [
+          "Authoritative ASOT behavior structure is deterministic and not model generated.",
+          "Missing enrichment fields are not replaced with fabricated narrative text."
+        ],
+        "merged_proposal_hash": "680aaf3365ef48dc1db315221034c58bc4ad76a22751f47d60377a5592a5a709",
+        "model": "gemma3:4b",
+        "normalized_enrichment_hash": "cb18670902cc37de284aa7d79b5f1fb48deb3c68b083e1201811d6af5ee4e7ad",
+        "omitted_or_empty_json_paths": [
+          "$.limitations[]",
+          "$.risks[]",
+          "$.state_actions.landed",
+          "$.state_actions.mission_flight",
+          "$.state_actions.preflight",
+          "$.state_descriptions.landed",
+          "$.state_descriptions.mission_flight",
+          "$.state_descriptions.preflight",
+          "$.state_descriptions.return_to_base",
+          "$.transition_rationale.preflight_to_mission_flight",
+          "$.transition_rationale.return_to_base_to_landed"
+        ],
+        "original_response_hash": "1bf116f8e6b737ee6f0ecb6a1898dbc9558966801486aff2efdd1f091245f6f3",
+        "prompt_hash": "283f6bdabff3e2d231916aee2cee1d054fe1bcacba8631ae56978b0c3f180961",
+        "provider": "ollama",
+        "repaired_response_hash": "",
+        "schema_version": "de2sim.ai_contribution_manifest.v1",
+        "substantive_ai_contribution_confirmed": true,
+        "validation_status": "passed"
+      },
+      "validated_proposal_hash": "680aaf3365ef48dc1db315221034c58bc4ad76a22751f47d60377a5592a5a709",
+      "local_ai_enrichment": {
+        "assumptions": [
+          "A 'battery_state' parameter exists.",
+          "The UAS is capable of returning to base."
+        ],
+        "behavior_summary": "The UAS returns to base when the battery state falls below a defined threshold and does not exceed a configured maximum speed.",
+        "limitations": [],
+        "risks": [],
+        "state_actions": {
+          "return_to_base": [
+            "ReturnToBase"
+          ]
+        },
+        "state_descriptions": {},
+        "transition_rationale": {
+          "mission_flight_to_return_to_base": "When the battery state falls below 20 percent."
+        }
+      },
+      "limitations": []
+    }
+  ]
+}
